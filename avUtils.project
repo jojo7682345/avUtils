@@ -1,0 +1,26 @@
+avUtils {
+	type: DLL
+	flags: -std=c11 -Wall -ggdb -fPIC
+	source: [
+		src
+	]
+	include: [
+		include
+	]
+}
+avUtilsTest {
+	type: EXE 
+	flags: -std=c11 -Wall -ggdb
+	source: [
+		test/src
+	]
+	include: [
+		include
+	]
+	libdir: [
+		lib
+	]
+	lib: [
+		avUtils
+	]
+}

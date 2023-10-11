@@ -1,0 +1,27 @@
+#general
+.o
+.exe
+.dll
+.so
+.a
+
+#obsidian
+.obsidian
+
+#build file
+bin/*
+bin/
+lib/*
+lib/
+tmp/
+builder*
+builder.exe
+.vs/*
+!build/builder.c
+!build/builder.h
+
+#project tasks and launch configurations for visual studio
+!.vs/*.vs.json
+.obsidian
+
+!CppProperties.json
