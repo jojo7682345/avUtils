@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#ifndef __cplusplus
+#define true 1
+#define false 0
+#define nullptr NULL
+#endif
+
 #ifndef AV_DISABLE_TYPES
 
 typedef unsigned int uint;
@@ -12,6 +18,9 @@ typedef unsigned short uint16;
 typedef unsigned char uint8;
 typedef unsigned char byte;
 
+typedef byte bool8;
+typedef uint32 bool32;
+
 #else
 
 #define uint unsigned int
@@ -20,6 +29,9 @@ typedef unsigned char byte;
 #define uint15 unsigned short
 #define uint8 unsigned char
 #define byte unsigned char
+
+#define bool8 unsigned char
+#define bool32 unsigned int
 
 #endif
 
