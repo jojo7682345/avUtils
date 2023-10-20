@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-void* avAllocate_(size_t size, const char* message, uint line, const char* func, const char* file) {
+void* avAllocate_(uint64 size, const char* message, uint line, const char* func, const char* file) {
 	void* data = malloc(size);
 
 	if (!data) {
@@ -15,7 +15,7 @@ void* avAllocate_(size_t size, const char* message, uint line, const char* func,
 	return data;
 }
 
-void* avCallocate_(size_t count, size_t size, const char* message, uint line, const char* func, const char* file) {
+void* avCallocate_(uint64 count, uint64 size, const char* message, uint line, const char* func, const char* file) {
 	void* data = calloc(count, size);
 
 	if (!data) {
@@ -27,7 +27,7 @@ void* avCallocate_(size_t count, size_t size, const char* message, uint line, co
 	return data;
 }
 
-void* avReallocate_(void* data, size_t size, const char* message, uint line, const char* func, const char* file) {
+void* avReallocate_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file) {
 	void* newPtr = realloc(data, size);
 
 	if (!newPtr) {
