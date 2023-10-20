@@ -1,11 +1,21 @@
 #include <avMemory.h>
+#include <avThread.h>
 
+uint task(byte* buffer, uint64 bufferSize) {
+
+	return 0;
+};
 
 int main() {
 
-	byte* data = avAllocate(300, "");
+	AvThread thread;
+	avCreateThread((AvThreadEntry) &task, &thread);
 
-	avFree(data);
+	avStartThread(nullptr, 0, thread);
+
+	avJoinThread(thread);
+
+	avDestroyThread(thread);
 
 	return 0;
 
