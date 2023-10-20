@@ -17,6 +17,7 @@ tmp/
 builder*
 builder.exe
 .vs/*
+.vscode/*
 !build/builder.c
 !build/builder.h
 
@@ -24,4 +25,4 @@ builder.exe
 !.vs/*.vs.json
 .obsidian
 
-!CppProperties.json
+CppProperties.json

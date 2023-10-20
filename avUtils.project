@@ -20,7 +20,7 @@ avUtils {
 }
 avUtilsTest {
 	type: EXE 
-	flags: -std=c11 -Wall -ggdb
+	flags: -std=c11 -Wall -ggdb -Wl,-rpath,./lib
 	source: [
 		test/src
 	]

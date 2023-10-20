@@ -6,7 +6,7 @@
 #ifndef __cplusplus
 #define true 1
 #define false 0
-#define nullptr NULL
+#define nullptr ((void*)0UL)
 #endif
 
 #ifndef AV_DISABLE_TYPES
