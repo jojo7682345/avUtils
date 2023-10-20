@@ -1,6 +1,16 @@
 avUtils {
+	type: LIB
+	flags: -std=c11 -Wpedantic -ggdb -fPIC
+	source: [
+		src
+	]
+	include: [
+		include
+	]
+}
+avUtils {
 	type: DLL
-	flags: -std=c11 -Wall -ggdb -fPIC
+	flags: -std=c11 -Wpedantic -ggdb -fPIC
 	source: [
 		src
 	]

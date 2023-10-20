@@ -12,7 +12,7 @@
 #ifdef _WIN32
 #define DLL_EXTENSION ".dll"
 #define LIB_PREFIX ""
-#define LIB_EXTENSION ".a"
+#define LIB_EXTENSION ".lib"
 #define EXE_EXTENSION ".exe"
 #define COPY_COMMAND(src, dst) "xcopy",src,dst,"/E /I /y"
 #else
@@ -420,7 +420,7 @@ const char* linker(const char** compiledFiles, size_t compiledCount, Project pro
 		if (!PATH_EXISTS("lib")) {
 			MKDIRS("lib");
 		}
-		const char* output = CONCAT("lib", project.name, LIB_EXTENSION);
+		const char* output = CONCAT(LIB_PREFIX, project.name, LIB_EXTENSION);
 
 		Cstr_Array args = {0};
 		args = cstr_array_append(args, ARCHIVER);
