@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <strsafe.h>
 #else
+#include <pthread.h>
 
 #endif
 
@@ -20,7 +21,7 @@ typedef struct AvThread_T {
 	DWORD threadID;
 	HANDLE threadHandle;
 #else
-
+	pthread_t threadHandle;
 #endif
 } AvThread_T;
 
@@ -141,12 +142,27 @@ uint joinThread(AvThread thread) {
 #else
 #include <unistd.h>
 
-void startThread(AvThread thread) {
+void* run(void* arg){
+	AvThread thread = (AvThread) arg;
+	uint ret = thread->entry(thread->buffer, thread->bufferSize);
+	pthread_exit((void*)(unsigned long)ret);
+}
 
+bool8 startThread(AvThread thread) {
+	int res = pthread_create(&thread->threadHandle, NULL, &run, thread);
+	if(res){
+		return false;
+	}
+	return true;
 }
 
 uint joinThread(AvThread thread) {
-	return 0;
+	void* retCode = 0;
+	if(pthread_join(thread->threadHandle, &retCode)){
+		return (uint)-1;
+	}
+
+	return (uint)(unsigned long)retCode;
 }
 
 #endif
