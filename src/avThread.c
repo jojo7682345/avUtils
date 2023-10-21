@@ -4,8 +4,9 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #include <strsafe.h>
+#include <process.h>
 #else
 #include <pthread.h>
 
@@ -76,65 +77,77 @@ void avDestroyThread(AvThread thread) {
 #ifdef _WIN32
 
 
-void handleWinError(LPTSTR lpszFunction) { 
-    // Retrieve the system error message for the last-error code
+void handleWinError(LPTSTR lpszFunction) {
+	// Retrieve the system error message for the last-error code
 
-    LPVOID lpMsgBuf;
-    LPVOID lpDisplayBuf;
-    DWORD dw = GetLastError(); 
+	LPVOID lpMsgBuf;
+	LPVOID lpDisplayBuf;
+	DWORD dw = GetLastError();
 	if (dw == 0) {
 		return;
 	}
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL );
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
 
-    // Display the error message and exit the process
+	// Display the error message and exit the process
 
-    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, 
-        (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR)); 
-    StringCchPrintf((LPTSTR)lpDisplayBuf, 
-        LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-        TEXT("%s failed with error %d: %s"), 
-        lpszFunction, dw, lpMsgBuf); 
-    MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK); 
+	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+		(lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
+	StringCchPrintf((LPTSTR)lpDisplayBuf,
+		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+		TEXT("%s failed with error %d: %s"),
+		lpszFunction, dw, lpMsgBuf);
+	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
 
-    LocalFree(lpMsgBuf);
-    LocalFree(lpDisplayBuf);
-    ExitProcess(dw); 
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
+	ExitProcess(dw);
 }
 
 
-DWORD WINAPI run(LPVOID lpParam) {
+uint WINAPI run(void* lpParam) {
 	AvThread thread = (AvThread)lpParam;
 	uint exitCode = thread->entry(thread->buffer, thread->bufferSize);
-	return (DWORD) exitCode;
+	return (DWORD)exitCode;
 }
 
 bool8 startThread(AvThread thread) {
-	HANDLE threadHandle = CreateThread(NULL, 0, &run, thread, 0, &(thread->threadID));
+	HANDLE threadHandle = (HANDLE) _beginthreadex(0, 0, &run, thread, 0, 0);
 	if (threadHandle == NULL) {
 		printf("failed to start thread\n");
 		return false;
 	}
-	thread->threadHandle = threadHandle;	
+	thread->threadHandle = threadHandle;
 	return true;
 }
 
 uint joinThread(AvThread thread) {
-	if (CloseHandle(thread->threadHandle)) {
-		handleWinError(TEXT("closing thread"));
+	switch (WaitForSingleObject(thread->threadHandle, INFINITE)) {
+	case WAIT_ABANDONED:
+	case WAIT_TIMEOUT:
+	case WAIT_FAILED:
+		handleWinError(TEXT("waiting"));
+		break;
+	default:
+		break;
 	}
+
 	DWORD exitCode = 0;
 	if (GetExitCodeThread(thread->threadHandle, &exitCode)) {
 		handleWinError(TEXT("getting thread exit code"));
 	}
+
+	if (CloseHandle(thread->threadHandle)) {
+		handleWinError(TEXT("closing thread"));
+	}
+
 	return (uint)exitCode;
 }
 
@@ -142,15 +155,15 @@ uint joinThread(AvThread thread) {
 #else
 #include <unistd.h>
 
-void* run(void* arg){
-	AvThread thread = (AvThread) arg;
+void* run(void* arg) {
+	AvThread thread = (AvThread)arg;
 	uint ret = thread->entry(thread->buffer, thread->bufferSize);
 	pthread_exit((void*)(unsigned long)ret);
 }
 
 bool8 startThread(AvThread thread) {
 	int res = pthread_create(&thread->threadHandle, NULL, &run, thread);
-	if(res){
+	if (res) {
 		return false;
 	}
 	return true;
@@ -158,7 +171,7 @@ bool8 startThread(AvThread thread) {
 
 uint joinThread(AvThread thread) {
 	void* retCode = 0;
-	if(pthread_join(thread->threadHandle, &retCode)){
+	if (pthread_join(thread->threadHandle, &retCode)) {
 		return (uint)-1;
 	}
 
