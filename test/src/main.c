@@ -1,44 +1,58 @@
 #include <avMemory.h>
 #include <avThread.h>
+#include <avQueue.h>
 #include <stdio.h>
 
-uint taskA(byte* buffer, uint64 bufferSize) {
-
-	printf("hello from thread A\n");
-	for (uint i = 0; i < (uint)-1; i++) {
-		// loop
-	}
-	printf("Goodbye from thread A\n");
-	return 0;
-};
-
-uint taskB(byte* buffer, uint64 bufferSize) {
-
-	printf("hello from thread B\n");
-	for (uint i = 0; i < (uint)-1; i++) {
-		// loop
-	}
-	printf("Goodbye from thread B\n");
-	return 0;
-};
 
 int main() {
 
-	AvThread threadA;
-	AvThread threadB;
-	avCreateThread((AvThreadEntry) &taskA, &threadA);
-	avCreateThread((AvThreadEntry) &taskB, &threadB);
+	AvQueue queue;
+	avQueueCreate(sizeof(int), 2, &queue);
 
-	avStartThread(nullptr, 0, threadA);
-	avStartThread(nullptr, 0, threadB);
 
-	uint ret = avJoinThread(threadA);
-	avJoinThread(threadB);
+	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
 
-	printf("%i\n", ret);
+	for (int i = 0; i < avQueueGetSize(queue); i++) {
+		avQueuePush(&i, queue);
+	}
 
-	avDestroyThread(threadA);
-	avDestroyThread(threadB);
+	if (avQueueIsFull(queue)) {
+		printf("queue filled\n");
+	}
+	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+
+	for (int i = 0; i < avQueueGetSize(queue); i++) {
+		int value;
+		avQueuePull(&value, queue);
+		printf("%i\n", value);
+	}
+
+	if (avQueueIsEmpty(queue)) {
+		printf("queue emptied\n");
+	} else {
+		printf("queue not emptied\n");
+	}
+
+	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+
+	for (int i = 0; i < avQueueGetSize(queue); i++) {
+		avQueuePush(&i, queue);
+	}
+
+	if (avQueueIsFull(queue)) {
+		printf("queue filled\n");
+	}
+	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+
+	for (int i = 0; i < avQueueGetSize(queue); i++) {
+		int value;
+		if (!avQueuePull(&value, queue)) {
+			break;
+		}
+		printf("%i\n", value);
+	}
+
+	avQueueDestroy(queue);
 
 
 	return 0;
