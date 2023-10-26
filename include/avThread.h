@@ -13,9 +13,9 @@ typedef enum AvThreadState {
 	AV_THREAD_STATE_RUNNING = 2,
 }AvThreadState;
 
-void avCreateThread(AvThreadEntry func, AvThread* thread);
-bool8 avStartThread(byte* buffer, uint64 bufferSize, AvThread thread);
-uint avJoinThread(AvThread thread);
-void avDestroyThread(AvThread thread);
+void avThreadCreate(AvThreadEntry func, AvThread* thread);
+bool8 avThreadStart(byte* buffer, uint64 bufferSize, AvThread thread);
+uint avThreadJoin(AvThread thread);
+void avThreadDestroy(AvThread thread);
 
 #endif

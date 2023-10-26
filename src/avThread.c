@@ -30,7 +30,7 @@ typedef struct AvThread_T {
 bool8 startThread(AvThread thread);
 uint joinThread(AvThread thread);
 
-void avCreateThread(AvThreadEntry func, AvThread* thread) {
+void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
 	(*thread) = avAllocate(sizeof(AvThread_T), "allocating handle for thread");
 	(*thread)->entry = func;
@@ -38,7 +38,7 @@ void avCreateThread(AvThreadEntry func, AvThread* thread) {
 
 }
 
-bool8 avStartThread(byte* buffer, uint64 bufferSize, AvThread thread) {
+bool8 avThreadStart(byte* buffer, uint64 bufferSize, AvThread thread) {
 
 	if (thread->state != AV_THREAD_STATE_STOPPED) {
 		printf("thread must not be in the running state\n");
@@ -57,7 +57,7 @@ bool8 avStartThread(byte* buffer, uint64 bufferSize, AvThread thread) {
 
 }
 
-uint avJoinThread(AvThread thread) {
+uint avThreadJoin(AvThread thread) {
 	if (thread->state != AV_THREAD_STATE_RUNNING) {
 		printf("thread must be running in order to be joined\n");
 		return (uint)-1;
@@ -69,7 +69,7 @@ uint avJoinThread(AvThread thread) {
 	return ret;
 }
 
-void avDestroyThread(AvThread thread) {
+void avThreadDestroy(AvThread thread) {
 	thread->state = AV_THREAD_STATE_UNINITALIZED;
 	avFree(thread);
 }
