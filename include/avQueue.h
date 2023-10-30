@@ -3,8 +3,6 @@
 
 #include "avTypes.h"
 
-
-
 typedef struct AvQueue_T* AvQueue;
 
 /// <summary>
