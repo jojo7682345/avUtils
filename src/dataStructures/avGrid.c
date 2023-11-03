@@ -1,5 +1,5 @@
-#include <avGrid.h>
-#include <avMemory.h>
+#include <AvUtils/dataStructures/avGrid.h>
+#include <AvUtils/avMemory.h>
 #include <string.h>
 
 typedef struct AvGrid_T {
@@ -80,7 +80,7 @@ void avGridClear(void* data, AvGrid grid) {
 
 void* avGridGetPtr(uint32 x, uint32 y, AvGrid grid) {
 	if (!checkBounds(x, y, grid)) {
-		return;
+		return nullptr;
 	}
 	return getPtr(x, y, grid);
 }

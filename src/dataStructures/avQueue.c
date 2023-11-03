@@ -1,5 +1,5 @@
-#include <avQueue.h>
-#include <avMemory.h>
+#include <AvUtils/dataStructures/avQueue.h>
+#include <AvUtils/avMemory.h>
 #include <string.h>
 
 typedef struct AvQueue_T {
@@ -13,7 +13,7 @@ typedef struct AvQueue_T {
 
 } AvQueue_T;
 
-void* getPtr(AvQueue queue, uint64 index) {
+static void* getPtr(AvQueue queue, uint64 index) {
 	index %= (queue->size);
 	return queue->data + queue->elementSize * index;
 }

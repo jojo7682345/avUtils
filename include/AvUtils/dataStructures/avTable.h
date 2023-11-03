@@ -1,7 +1,7 @@
 #ifndef __AV_TABLE__
 #define __AV_TABLE__
 
-#include "avTypes.h"
+#include "../avTypes.h"
 
 typedef struct AvTable_T* AvTable;
 

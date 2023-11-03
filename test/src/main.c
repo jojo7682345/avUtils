@@ -1,6 +1,6 @@
-#include <avMemory.h>
-#include <avThread.h>
-#include <avQueue.h>
+#include <AvUtils/avMemory.h>
+#include <AvUtils/threading/avThread.h>
+#include <AvUtils/avDataStructures.h>
 #include <stdio.h>
 
 

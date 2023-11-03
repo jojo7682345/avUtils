@@ -1,8 +1,9 @@
 #ifndef __AV_DATA_STRUCTURES__
 #define __AV_DATA_STRUCTURES__
 
-#include "avQueue.h"
-#include "avGrid.h"
+#include "dataStructures/avQueue.h"
+#include "dataStructures/avGrid.h"
+#include "dataStructures/avTable.h"
 //#include "avList.h"
 //#include "avMap.h"
 

@@ -1,8 +1,6 @@
 #ifndef __AV_TYPES__
 #define __AV_TYPES__
 
-#include <stdint.h>
-
 #ifndef __cplusplus
 #define true 1
 #define false 0

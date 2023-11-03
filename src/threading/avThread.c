@@ -1,6 +1,6 @@
-#include <avThread.h>
+#include <AvUtils/threading/avThread.h>
 #define AV_ALLOCATE_ZERO_OUT
-#include <avMemory.h>
+#include <AvUtils/avMemory.h>
 #include <stdio.h>
 
 #ifdef _WIN32

@@ -1,7 +1,7 @@
 #ifndef __AV_THREAD__
 #define __AV_THREAD__
 
-#include "avTypes.h"
+#include "../avTypes.h"
 
 typedef struct AvThread_T* AvThread;
 

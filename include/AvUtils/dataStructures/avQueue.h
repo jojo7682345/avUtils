@@ -1,7 +1,7 @@
 #ifndef __AV_QUEUE__
 #define __AV_QUEUE__
 
-#include "avTypes.h"
+#include "../avTypes.h"
 
 typedef struct AvQueue_T* AvQueue;
 

@@ -1,7 +1,7 @@
-#include <avTable.h>
-#include <avMemory.h>
+#include <AvUtils/dataStructures/avTable.h>
+#include <AvUtils/avMemory.h>
 #include <string.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 typedef struct AvTable_T {
 
@@ -41,28 +41,28 @@ void avTableCreateFromArray(uint32 columns, uint32 rows, AvTable* table, uint64*
 void avTableCreate(uint32 columns, uint32 rows, AvTable* table, ...) {
 	
 	va_list args;
-	__crt_va_start(args, table);
+	va_start(args, table);
 	uint64* sizes = avCallocate(columns, sizeof(uint64), "allocating collumnsizes");
 	for (uint i = 0; i < columns; i++) {
-		sizes[i] = __crt_va_arg(args, uint64);
+		sizes[i] = va_arg(args, uint64);
 	}	
-	__crt_va_end(args);
+	va_end(args);
 	avTableCreateFromArray(columns, rows, table, sizes);
 	avFree(sizes);
 }
 
-bool32 checkBounds(uint32 column, uint32 row, AvTable table) {
+static bool32 checkBounds(uint32 column, uint32 row, AvTable table) {
 	if (table->rows <= row || table->columns <= column) {
 		return false;
 	}
 	return true;
 }
 
-void* getPtr(uint32 column, uint32 row, AvTable table) {
+static void* getPtr(uint32 column, uint32 row, AvTable table) {
 	uint64 rowOffset = (uint64)row * table->rowSize;
 	uint64 columnOffset = table->columnOffsets[column];
 
-	return table->data + rowOffset + columnOffset;
+	return (byte*)table->data + rowOffset + columnOffset;
 }
 
 void avTableWrite(void* data, uint32 column, uint32 row, AvTable table) {
@@ -110,7 +110,7 @@ void avTableWriteColumn(void* data, uint32 column, AvTable table) {
 	uint64 columnSize = table->columnSizes[column];
 	uint64 offset = 0;
 	for (uint32 i = 0; i < table->rows; i++) {
-		memcpy(getPtr(column, i, table), data + offset, columnSize);
+		memcpy(getPtr(column, i, table), (byte*)data + offset, columnSize);
 	}
 }
 
@@ -129,7 +129,7 @@ void avTableReadColumn(void* data, uint32 column, AvTable table) {
 	uint64 columnSize = table->columnSizes[column];
 	uint64 offset = 0;
 	for (uint32 i = 0; i < table->rows; i++) {
-		memcpy(data + offset, getPtr(column, i, table), columnSize);
+		memcpy((byte*)data + offset, getPtr(column, i, table), columnSize);
 	}
 }
 
