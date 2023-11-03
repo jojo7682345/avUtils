@@ -78,6 +78,13 @@ void avGridClear(void* data, AvGrid grid) {
 	}
 }
 
+void* avGridGetPtr(uint32 x, uint32 y, AvGrid grid) {
+	if (!checkBounds(x, y, grid)) {
+		return;
+	}
+	return getPtr(x, y, grid);
+}
+
 void aGridDestroy(AvGrid grid) {
 	avFree(grid->data);
 	avFree(grid);

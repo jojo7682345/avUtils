@@ -29,20 +29,30 @@ void avGridWrite(void* data, uint32 x, uint32 y, AvGrid grid);
 /// <param name="data"> pointer to where the data needs to be stored </param>
 /// <param name="x"></param>
 /// <param name="y"></param>
-/// <param name="grid"> the grid handle</param>
+/// <param name="grid">: the grid handle</param>
 void avGridRead(void* data, uint32 x, uint32 y, AvGrid grid);
 
 /// <summary>
 /// clear the grid
 /// </summary>
-/// <param name="data"> clear value</param>
-/// <param name="grid"> the grid handle</param>
+/// <param name="data">: clear value</param>
+/// <param name="grid">: the grid handle</param>
 void avGridClear(void* data, AvGrid grid);
+
+/// <summary>
+/// gets the pointer to a cell in the grid
+/// </summary>
+/// <param name="x"></param>
+/// <param name="y"></param>
+/// <param name="grid">: the grid handle</param>
+/// <returns>the pointer to the data in the cell</returns>
+void* avGridGetPtr(uint32 x, uint32 y, AvGrid grid);
 
 /// <summary>
 /// destroys the grid instance
 /// </summary>
 /// <param name="grid"></param>
 void aGridDestroy(AvGrid grid);
+
 
 #endif//__AV_GRID__
