@@ -5,6 +5,6 @@
 #include "dataStructures/avGrid.h"
 #include "dataStructures/avTable.h"
 //#include "avList.h"
-//#include "avMap.h"
+#include "avFMap.h"
 
 #endif //__AV_DATA_STRUCTURES__
