@@ -2,9 +2,11 @@
 #include <AvUtils/threading/avThread.h>
 #include <AvUtils/avDataStructures.h>
 #include <stdio.h>
-
+#include <avUtils/avLogging.h>
 
 int main() {
+
+	avAssert(1, "hello");
 
 	AvQueue queue;
 	avQueueCreate(sizeof(int), 2, &queue);
