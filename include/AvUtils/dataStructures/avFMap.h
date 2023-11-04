@@ -9,12 +9,12 @@ typedef struct AvFMap_T* AvFMap;
 
 typedef uint32(*HashFunction)(void* data, uint64 dataSize, uint32 mapSize);
 
-void avFMapCreate(uint32 size, uint64 dataSize, uint64 keySize, AvFMap* map, HashFunction hashFunction = NULL);
+void avFMapCreate(uint32 size, uint64 dataSize, uint64 keySize, HashFunction hashFunction, AvFMap* map);
 
-void avFMapWrite(void* data, void* key, AvFMap map, uint64 keySize = AV_MAP_STORED_KEY_SIZE);
-void avFMapRead(void* data, void* key, AvFMap map, uint64 keySize = AV_MAP_STORED_KEY_SIZE);
+bool32 avFMapWrite(void* data, void* key, uint64 keySize, AvFMap map);
+void avFMapRead(void* data, void* key, uint64 keySize, AvFMap map);
 
-void* avFMapGetPtr(void* key, AvFMap map, uint64 keySize = AV_MAP_STORED_KEY_SIZE);
+void* avFMapGetPtr(void* key, uint64 keySize, AvFMap map);
 
 uint32 avFMapGetSize(AvFMap map);
 uint64 avFMapGetDataSize(AvFMap map);

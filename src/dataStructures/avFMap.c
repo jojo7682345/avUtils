@@ -22,7 +22,7 @@ static uint32 defaultHashFunction(void* data, uint64 dataSize, uint32 mapSize) {
 	return sum % mapSize;
 }
 
-void avFMapCreate(uint32 size, uint64 dataSize, uint64 keySize, AvFMap* map, HashFunction hashFunction) {
+void avFMapCreate(uint32 size, uint64 dataSize, uint64 keySize, HashFunction hashFunction, AvFMap* map) {
 	if (size == 0 || dataSize == 0) {
 		//TODO: add error log
 		return;
@@ -43,10 +43,10 @@ static void* getPtr(uint32 index, AvFMap map) {
 	return (byte*)map->data + (uint64)index * map->dataSize;;
 }
 
-bool avFMapWrite(void* data, void* key, AvFMap map, uint64 keySize) {
+bool32 avFMapWrite(void* data, void* key, uint64 keySize, AvFMap map) {
 	
 	uint32 index = map->hash(key, keySize == AV_MAP_STORED_KEY_SIZE ? map->keySize : keySize, map->size);
-	if (!checkBounds(index)) {
+	if (!checkBounds(index, map)) {
 		//TODO: add error log
 		return false; 
 	}
@@ -55,20 +55,20 @@ bool avFMapWrite(void* data, void* key, AvFMap map, uint64 keySize) {
 	return false;
 }
 
-void avFMapRead(void* data, void* key, AvFMap map, uint64 keySize) {
+void avFMapRead(void* data, void* key, uint64 keySize, AvFMap map) {
 	uint32 index = map->hash(key, keySize == AV_MAP_STORED_KEY_SIZE ? map->keySize : keySize, map->size);
-	if (!checkBounds(index)) {
+	if (!checkBounds(index, map)) {
 		//TODO: add error log
 		return;
 	}
 	memcpy(getPtr(index, map), data, map->dataSize);
 }
 
-void* avFMapGetPtr(void* key, AvFMap map, uint64 keySize) {
+void* avFMapGetPtr(void* key, uint64 keySize, AvFMap map) {
 	uint32 index = map->hash(key, keySize == AV_MAP_STORED_KEY_SIZE ? map->keySize : keySize, map->size);
-	if (!checkBounds(index)) {
+	if (!checkBounds(index, map)) {
 		//TODO: add error log
-		return;
+		return nullptr;
 	}
 	return getPtr(index, map);
 }
