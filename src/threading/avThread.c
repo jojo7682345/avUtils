@@ -30,6 +30,8 @@ typedef struct AvThread_T {
 bool8 startThread(AvThread thread);
 uint joinThread(AvThread thread);
 
+void sleepThread(uint64 milis);
+
 void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
 	(*thread) = avAllocate(sizeof(AvThread_T), "allocating handle for thread");
@@ -38,7 +40,7 @@ void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
 }
 
-bool8 avThreadStart(byte* buffer, uint64 bufferSize, AvThread thread) {
+bool8 avThreadStart(void* buffer, uint64 bufferSize, AvThread thread) {
 
 	if (thread->state != AV_THREAD_STATE_STOPPED) {
 		printf("thread must not be in the running state\n");
@@ -70,8 +72,16 @@ uint avThreadJoin(AvThread thread) {
 }
 
 void avThreadDestroy(AvThread thread) {
+	if (thread->state == AV_THREAD_STATE_RUNNING) {
+		avThreadJoin(thread);
+	}
+
 	thread->state = AV_THREAD_STATE_UNINITALIZED;
 	avFree(thread);
+}
+
+void avThreadSleep(uint64 milis) {
+	sleepThread(milis);
 }
 
 #ifdef _WIN32
@@ -151,6 +161,10 @@ uint joinThread(AvThread thread) {
 	return (uint)exitCode;
 }
 
+void sleepThread(uint64 milis) {
+	Sleep((DWORD)milis);
+}
+
 
 #else
 #include <unistd.h>
@@ -176,6 +190,10 @@ uint joinThread(AvThread thread) {
 	}
 
 	return (uint)(unsigned long)retCode;
+}
+
+void sleepThread(uint64 milis) {
+	usleep(milis);
 }
 
 #endif
