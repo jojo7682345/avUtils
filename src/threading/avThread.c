@@ -9,7 +9,8 @@
 #include <process.h>
 #else
 #include <pthread.h>
-
+#include <stdlib.h>
+#include <unistd.h>
 #endif
 
 typedef struct AvThread_T {
@@ -85,7 +86,6 @@ void avThreadSleep(uint64 milis) {
 }
 
 #ifdef _WIN32
-
 
 void handleWinError(LPTSTR lpszFunction) {
 	// Retrieve the system error message for the last-error code
@@ -167,7 +167,6 @@ void sleepThread(uint64 milis) {
 
 
 #else
-#include <unistd.h>
 
 void* run(void* arg) {
 	AvThread thread = (AvThread)arg;
@@ -192,8 +191,8 @@ uint joinThread(AvThread thread) {
 	return (uint)(unsigned long)retCode;
 }
 
-void sleepThread(uint64 milis) {
-	usleep(milis);
+void sleepThread(uint64 micros) {
+	usleep(micros);
 }
 
 #endif

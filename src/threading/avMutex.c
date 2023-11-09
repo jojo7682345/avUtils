@@ -1,19 +1,20 @@
 #include <AvUtils/threading/avMutex.h>
-#include <avUtils/avMemory.h>
+#include <AvUtils/avMemory.h>
 
 #include <stdio.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
-
+#include <unistd.h>
+#include <pthread.h>
 #endif
 
 typedef struct AvMutex_T {
 #ifdef _WIN32
 	HANDLE mutexHandle;
 #else
-
+	pthread_mutex_t mutex;
 #endif
 } AvMutex_T;
 
@@ -64,5 +65,18 @@ static void unlockMutex(AvMutex mutex) {
 	ReleaseMutex(mutex->mutexHandle);
 }
 #else
+static bool32 createMutex(AvMutex mutex) {
+	// no unix specific initialisation is required.
+	return true;
+}
+static void destroyMutex(AvMutex mutex) {
+	// do nothing no unix specific initialisation is required.
+}
 
+static void lockMutex(AvMutex mutex) {
+	pthread_mutex_lock(&mutex->mutex);
+}
+static void unlockMutex(AvMutex mutex) {
+	pthread_mutex_unlock(&mutex->mutex);
+}
 #endif
