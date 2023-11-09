@@ -1,5 +1,5 @@
 #include <AvUtils/dataStructures/avFMap.h>
-#include <avUtils/avMemory.h>
+#include <AvUtils/avMemory.h>
 #include <string.h>
 
 

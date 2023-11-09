@@ -1,4 +1,4 @@
-#include <avUtils/logging/avAssert.h>
+#include <AvUtils/logging/avAssert.h>
 #include <stdio.h>
 #include <stdlib.h>
 

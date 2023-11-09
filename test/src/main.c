@@ -2,7 +2,7 @@
 #include <AvUtils/avThreading.h>
 #include <AvUtils/avDataStructures.h>
 #include <stdio.h>
-#include <avUtils/avLogging.h>
+#include <AvUtils/avLogging.h>
 
 void testQueue() {
 	AvQueue queue;
@@ -72,7 +72,7 @@ void testThread() {
 	AvThread threadA;
 	AvThread threadB;
 	avThreadCreate((AvThreadEntry)&threadFuncA, &threadA);
-	avThreadCreate((AvThreadEntry)&threadFuncA, &threadB);
+	avThreadCreate((AvThreadEntry)&threadFuncB, &threadB);
 
 	avThreadStart(nullptr, 0, threadA);
 	avThreadStart(nullptr, 0, threadB);
