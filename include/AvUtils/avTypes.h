@@ -16,6 +16,11 @@ typedef unsigned short uint16;
 typedef unsigned char uint8;
 typedef unsigned char byte;
 
+typedef int int32;
+typedef long int64;
+typedef short int16;
+typedef char int8;
+
 typedef byte bool8;
 typedef uint32 bool32;
 
@@ -27,6 +32,11 @@ typedef uint32 bool32;
 #define uint15 unsigned short
 #define uint8 unsigned char
 #define byte unsigned char
+
+#define int32 int
+#define int64 long
+#define int16 short
+#define int8 char
 
 #define bool8 unsigned char
 #define bool32 unsigned int
