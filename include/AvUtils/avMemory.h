@@ -20,7 +20,7 @@ void* avCallocate_(uint64 count, uint64 size, const char* message, uint line, co
 #define avCallocate(count, size, message) avCallocate_(count, size, message, __LINE__, __func__, __FILE__)
 
 void* avReallocate_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file);
-#define avReallocate(size, message) avReallocate_(size, message, __LINE__, __func__, __FILE__)
+#define avReallocate(data, size, message) avReallocate_(data, size, message, __LINE__, __func__, __FILE__)
 
 void avFree_(void* data, uint line, const char* func, const char* file);
 #define avFree(data) avFree_(data, __LINE__, __func__, __FILE__)
