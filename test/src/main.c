@@ -89,7 +89,6 @@ void testThread() {
 uint32 mutexFunc(void* data, uint64 dataSize) {
 	AvMutex mutex = (AvMutex)data;
 
-
 	avThreadSleep(100);
 	
 	avMutexLock(mutex);
