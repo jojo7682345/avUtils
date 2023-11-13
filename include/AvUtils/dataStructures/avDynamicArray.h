@@ -19,10 +19,17 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray);
 
 void avDynamicArrayClear(void* data, AvDynamicArray dynamicArray);
 
+/// <summary>
+/// reserves additional space. Trim the array first to make sure the reserved data is contiquous for better performance.
+/// </summary>
+/// <param name="count"></param>
+/// <param name="dynamicArray"></param>
 void avDynamicArrayReserve(uint32 count, AvDynamicArray dynamicArray);
 
 uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray);
 uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray);
+
+void avDynamicArraySetDeallocateElementCallback(AvDeallocateElementCallback callback, AvDynamicArray dynamicArray);
 
 void avDynamicArraySetGrowSize(uint32 size, AvDynamicArray dynamicArray);
 uint32 avDynamicArrayGetGrowSize(AvDynamicArray dynamicArray);
@@ -32,6 +39,14 @@ uint32 avDynamicArrayGetCapacity(AvDynamicArray dynamicArray);
 uint64 avDynamicArrayGetDataSize(AvDynamicArray dynamicArray);
 
 void avDynamicArrayTrim(AvDynamicArray dynamicArray);
+
+/// <summary>
+/// Appends the source array to the destination array. Transfers ownership of all the data within the source array.
+/// The source array is practically destroyed after calling this function.
+/// Arrays must have the same datasize
+/// </summary>
+void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
+
 
 #ifdef AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 

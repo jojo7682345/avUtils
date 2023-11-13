@@ -25,6 +25,8 @@ typedef struct AvDynamicArray_T {
 
 	uint32 count;
 	uint32 capacity;
+
+	AvDeallocateElementCallback deallocElement; 
 } AvDynamicArray_T;
 
 static Page* createPage(uint32 capacity, uint64 dataSize) {
@@ -114,13 +116,23 @@ bool32 avDynamicArrayCreate(uint32 initialSize, uint64 dataSize, AvDynamicArray*
 	(*dynamicArray)->count = 0;
 	(*dynamicArray)->capacity = 0;
 	(*dynamicArray)->data = addPage(initialSize, *dynamicArray);
-
+	(*dynamicArray)->deallocElement = nullptr;
 	return 1;
 }
 
 void avDynamicArrayDestroy(AvDynamicArray dynamicArray) {
+	if (dynamicArray == nullptr) {
+		return;
+	}
 	Page* page = dynamicArray->data;
 	while (page) {
+
+		if (dynamicArray->deallocElement) {
+			for (uint i = 0; i < page->count; i++) {
+				dynamicArray->deallocElement(getPtr(page, i, dynamicArray));
+			}
+		}
+
 		Page* nextPage = page->next;
 		destroyPage(page);
 		page = nextPage;
@@ -213,6 +225,10 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 		return false;
 	}
 
+	if (dynamicArray->deallocateElement) {
+		dynamicArray->deallocElement(getPtr(page, index, dynamicArray), dynamicArray->dataSize);
+	}
+
 	uint32 followingCount = page->count - index - 1;
 
 	memmove(getPtr(page, index, dynamicArray), getPtr(page, index + 1, dynamicArray), (uint64)followingCount * dynamicArray->dataSize);
@@ -289,6 +305,10 @@ uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 s
 	return count;
 }
 
+void avDynamicArraySetDeallocateElementCallback(AvDeallocateElementCallback callback, AvDynamicArray dynamicArray) {
+	dynamicArray->deallocElement = callback;
+}
+
 void avDynamicArraySetGrowSize(uint32 size, AvDynamicArray dynamicArray) {
 	dynamicArray->growSize = size;
 }
@@ -325,6 +345,20 @@ void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 			return;
 		}
 	}
+}
+
+void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src) {
+	if (dst->dataSize != (*src)->dataSize) {
+		return;
+	}
+	avDynamicArrayTrim(dst);
+	dst->lastPage->next = (*src)->data;
+	(*src)->data->prev = dst->lastPage;
+	dst->count += (*src)->count;
+	dst->capacity += (*src)->capacity;
+	(*src)->data = nullptr;
+	avDynamicArrayDestroy(*src);
+	*src = nullptr;
 }
 
 uint32 avDynamicArrayGetPageCount(AvDynamicArray dynamicArray) {

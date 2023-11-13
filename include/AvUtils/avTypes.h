@@ -43,4 +43,6 @@ typedef uint32 bool32;
 
 #endif
 
+typedef void (*AvDeallocateElementCallback)(void*, uint64);
+
 #endif //__AV_TYPES__
