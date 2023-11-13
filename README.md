@@ -2,33 +2,6 @@
 AvUtils is a library of common functions and data structures for C for both Windows and Linux.
 
 ## Contents
-### Typedefs
-Some additional typedefs are provided.
-- `uint` - *32-bit unsigned integer*
-- `uint32` - *32-bit unsigned integer*
-- `uint64` - *64-bit unsigned integer*
-- `uint16` - *16-bit unsigned integer*
-- `uint8` - *8-bit unsigned integer*
-- `byte` - *8-bit unsigned integer*
-
-- `int32` - *32-bit signed integer*
-- `int64` - *64-bit signed integer*
-- `int16` - *16-bit signed integer*
-- `int8` - *8-bit signed integer*
-
-- `bool8` - *8-bit unsigned integer*
-- `bool32` - *32-bit unsigned integer*
-
-If these typedefs cause name conflicts. Use:
-```C
-#define AV_DISABLE_TYPES
-```
-before including. Then use:
-```C
-#undef uint32
-```
-for any conflicting types
-
 ### Memory
 Utilities for memory allocation
 - `AvAllocate` - *Allocate memory on the heap*
@@ -61,6 +34,32 @@ Used to easily communicate over the network
 Debug and logging utilities
 - `avAssert` - *Assert a statement, used for debugging purposes*
 
+### Typedefs
+Some additional typedefs are provided.
+- `uint` - *32-bit unsigned integer*
+- `uint32` - *32-bit unsigned integer*
+- `uint64` - *64-bit unsigned integer*
+- `uint16` - *16-bit unsigned integer*
+- `uint8` - *8-bit unsigned integer*
+- `byte` - *8-bit unsigned integer*
+
+- `int32` - *32-bit signed integer*
+- `int64` - *64-bit signed integer*
+- `int16` - *16-bit signed integer*
+- `int8` - *8-bit signed integer*
+
+- `bool8` - *8-bit unsigned integer*
+- `bool32` - *32-bit unsigned integer*
+
+If these typedefs cause name conflicts. Use:
+```C
+#define AV_DISABLE_TYPES
+```
+before including. Then use:
+```C
+#undef uint32
+```
+for any conflicting types
 
 ## Naming
 Everything start with the AV prefix. Functions start with a lowercase `av`. Handles and types start with `Av` and constants, enums and definitions start with `AV`.
