@@ -3,6 +3,7 @@
 #define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 #include <AvUtils/avDataStructures.h>
 #include <AvUtils/avLogging.h>
+#include <AvUtils/avString.h>
 
 #include <stdio.h>
 
@@ -89,7 +90,7 @@ void testThread() {
 uint32 mutexFunc(void* data, uint64 dataSize) {
 	AvMutex mutex = (AvMutex)data;
 
-	avThreadSleep(100);
+	avThreadSleep(10);
 	
 	avMutexLock(mutex);
 	printf("threadB\n");
@@ -107,7 +108,7 @@ void testMutex() {
 
 	avMutexLock(mutex);
 
-	avThreadSleep(1000);
+	avThreadSleep(100);
 	printf("threadA\n");
 
 	avMutexUnlock(mutex);
@@ -187,12 +188,41 @@ void testDynamicArray() {
 	avDynamicArrayDestroy(arr);
 }
 
+
+void testString() {
+	
+	avStringDebugContextStart;
+
+	char c_str[] = "test string__";
+	AvString str = AV_STR(c_str);
+
+	strOffset offset = avStringFindFirstOccranceOfChar(str, ' ');
+
+	printf("char ' ' offset of %lu\n", offset);
+
+	avStringReplaceChar(str, ' ', '_');
+	AvStringPrint(str);
+	printf("\n");
+
+	AvAllocatedString newString;
+	avStringReplace(str, AV_STR("_"), AV_STR(" insert "), &newString);
+	
+	AvStringPrint(newString.str);
+
+	avAllocatedStringDestroy(&newString);
+
+	printf("\n");
+
+	avStringDebugContextEnd;
+}
+
 int main() {
 
 	testDynamicArray();
 	testQueue();
 	testThread();
 	testMutex();
+	testString();
 	return 0;
 
 }
