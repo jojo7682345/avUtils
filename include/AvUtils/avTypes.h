@@ -46,5 +46,4 @@ typedef uint32 bool32;
 typedef void (*AvDeallocateElementCallback)(void*, uint64);
 typedef uint64 strOffset;
 
-
-#endif //__AV_TYPES__
+#endif//__AV_TYPES__

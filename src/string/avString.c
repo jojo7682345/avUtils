@@ -1,9 +1,11 @@
 #include <AvUtils/avString.h>
 #include <AvUtils/avMemory.h>
+#include <AvUtils/avMath.h>
 #include <AvUtils/dataStructures/avDynamicArray.h>
 
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 typedef struct StringDebugContext_T* StringDebugContext;
 typedef struct StringDebugContext_T {
@@ -117,7 +119,13 @@ uint64 avStringReplace(AvString str, AvString sequence, AvString replacement, Av
 	uint64 count = avStringFindCount(str, sequence);
 
 	if (count == 0) {
+		if (result) {
+			avAllocatedStringCreate(str, result);
+		}
 		return 0;
+	}
+	if (result == NULL) {
+		return count;
 	}
 
 	uint64 remainingLength = str.len - count * sequence.len;
@@ -149,6 +157,15 @@ uint64 avStringReplace(AvString str, AvString sequence, AvString replacement, Av
 	return count;
 }
 
+void avStringJoin(AvString strA, AvString strB, AvAllocatedString* result){
+
+	uint64 len = strA.len + strB.len;
+
+	avAllocatedStringCreate(AV_STRL(nullptr, len), result);
+	avStringMemoryStore(strA, 0, AV_STRING_FULL_LENGTH, result->memory);
+	avStringMemoryStore(strB, strA.len, AV_STRING_FULL_LENGTH, result->memory);
+}
+
 void avStringMemoryAllocate(uint64 size, AvStringMemory* memory) {
 #ifndef NDEBUG
 	if (debugContext) {
@@ -156,27 +173,116 @@ void avStringMemoryAllocate(uint64 size, AvStringMemory* memory) {
 	}
 #endif
 
-	memory->data = avCallocate(size, 1, "allocating string memory");
+	memory->data = avCallocate(size+1, 1, "allocating string memory");
 	memory->size = size;
 	memory->referenceCount = 0;
+}
+
+void avStringMemoryStore(AvString str, uint64 offset, uint64 len, AvStringMemory* memory) {
+	if(offset >= memory->size){
+		return;
+	}
+	if(len == AV_STRING_FULL_LENGTH){
+		len = str.len;
+	}
+	len = AV_MIN(memory->size, len + offset) - offset;
+
+	memcpy(memory->data + offset, str.chrs, len);
+}
+
+void avStringMemoryStoreCharArraysAV_(AvAllocatedString* result, ...){
+	
+	AvDynamicArray arr;
+	avDynamicArrayCreate(0, sizeof(const char*), &arr);
+
+	
+	
+	va_list list;
+	va_start(list, result);
+	const char* arg = NULL;
+	while(arg = va_arg(list, const char*)){
+		avDynamicArrayAdd(&arg, arr);
+	}
+	va_end(list);
+
+	uint32 count = avDynamicArrayGetSize(arr);
+	const char** strs = avCallocate(count, sizeof(const char*), "allocating strings");
+	avDynamicArrayReadRange(strs, count, 0, sizeof(const char*), 0, arr);
+	avDynamicArrayDestroy(arr);
+
+	avStringMemoryStoreCharArrays(result, count, strs);
+
+	avFree(strs);
+}
+
+void avStringMemoryStoreCharArrays(AvAllocatedString* result, uint32 count, const char* strs[]){
+
+	if(count == 0){
+		result->str = (AvString){0};
+		result->memory = NULL;
+		return;
+	}
+
+	uint64 size = 0;
+	for(uint32 i = 0; i < count; i++){
+		size += avStringLength(strs[i]);
+	}
+
+	avAllocatedStringCreate(AV_STRL(nullptr, size), result);
+	uint64 offset = 0;
+	for(uint i = 0; i < count; i++){
+		uint64 size = avStringLength(strs[i]);
+		avStringMemoryStore(AV_STRL((char*)strs[i], size), offset, size, result->memory);
+		offset += size;
+	}
+}
+
+void avStringMemoryCreateString(uint64 offset, uint64 len, AvAllocatedString* allocatedString, AvStringMemory* memory) {
+	if (offset >= memory->size) {
+		allocatedString->str = AV_STRL(nullptr, 0);
+		allocatedString->memory = nullptr;
+		return;
+	}
+	if (len == AV_STRING_FULL_LENGTH) {
+		len = memory->size;
+	}
+	len = AV_MIN(memory->size, len + offset) - offset;
+	memory->referenceCount++;
+	allocatedString->memory = memory;
+	allocatedString->str.len = len;
+	allocatedString->str.chrs = memory->data + offset;
+}
+
+
+void avStringClone(uint64 offset, uint64 len, AvString str, AvAllocatedString* allocatedString) {
+	if(offset >= str.len){
+		return;
+	}
+	if(len==AV_STRING_FULL_LENGTH){
+		len = str.len;
+	}
+	len = AV_MIN(str.len, len + offset) - offset;
+	str.chrs += offset;
+	str.len = len;
+	avAllocatedStringCreate(str, allocatedString);
 }
 
 void avAllocatedStringCreate(AvString str, AvAllocatedString* allocatedString) {
 	
 	AvStringMemory* memory = avCallocate(1, sizeof(AvStringMemory), "allocating string memory handle");
-	avStringMemoryAllocate(str.len + 1, memory);
+	avStringMemoryAllocate(str.len, memory);
 	if (str.chrs) {
-		memcpy(memory->data, str.chrs, str.len);
+		avStringMemoryStore(str, 0, AV_STRING_FULL_LENGTH, memory);
 	}
-	memory->referenceCount = 1;
-	allocatedString->memory = memory;
-	allocatedString->str.len = str.len;
-	allocatedString->str.chrs = memory->data;
+	avStringMemoryCreateString(0, str.len, allocatedString, memory);
 
 }
 
 void avAllocatedStringDestroy(AvAllocatedString* str) {
-	if (--str->memory->referenceCount == 0) {
+	if(str==NULL){
+		return;
+	}
+	if (str->memory && --str->memory->referenceCount == 0) {
 		avStringMemoryFree(str->memory);
 	}
 	str->str = (AvString){ 0 };
@@ -202,8 +308,17 @@ void avStringMemoryFree(AvStringMemory* memory) {
 #endif
 }
 
-void AvStringPrint(AvString str) {
+void avStringPrint(AvString str) {
 	printf("%.*s", str.len, str.chrs);
+}
+
+void avStringPrintLn(AvString str) {
+	avStringPrint(str);
+	printf("\n");
+}
+
+void avStringPrintln(AvString str){
+	avStringPrintLn(str);
 }
 
 
@@ -224,7 +339,7 @@ void avStringDebugContextEnd_() {
 		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
-		printf("allocated string memory has not been freed: %i remaining references\n", stringMemory->referenceCount);
+		printf("allocated string memory containing \"%.*s\" has not been freed: %i remaining references\n", stringMemory->size, stringMemory->data, stringMemory->referenceCount);
 		avStringMemoryFree(stringMemory);
 	}
 	avDynamicArrayDestroy(debugContext->allocatedMemory);

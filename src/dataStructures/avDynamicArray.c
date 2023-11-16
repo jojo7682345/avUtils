@@ -284,13 +284,13 @@ void avDynamicArrayReserve(uint32 count, AvDynamicArray dynamicArray) {
 	addPage(count, dynamicArray);
 }
 
-uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray) {
+uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
 	if (count == 0) {
 		return 0;
 	}
 	byte* dataPtr = (byte*)data + offset;
 	for (uint i = 0; i < count; i++) {
-		if (!avDynamicArrayWrite(dataPtr, index + i, dynamicArray)) {
+		if (!avDynamicArrayWrite(dataPtr, startIndex + i, dynamicArray)) {
 			return i + 1;
 		}
 		dataPtr += stride;
@@ -298,14 +298,14 @@ uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 
 	return count;
 }
 
-uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray) {
+uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
 	if (count == 0) {
 		return 0;
 	}
 
 	byte* dataPtr = (byte*)data + offset;
 	for (uint i = 0; i < count; i++) {
-		if (!avDynamicArrayRead(data, index + i, dynamicArray)) {
+		if (!avDynamicArrayRead(data, startIndex + i, dynamicArray)) {
 			return i + 1;
 		}
 		dataPtr += stride;

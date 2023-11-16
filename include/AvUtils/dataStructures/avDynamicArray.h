@@ -26,8 +26,8 @@ void avDynamicArrayClear(void* data, AvDynamicArray dynamicArray);
 /// <param name="dynamicArray"></param>
 void avDynamicArrayReserve(uint32 count, AvDynamicArray dynamicArray);
 
-uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray);
-uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 index, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
 
 void avDynamicArraySetDeallocateElementCallback(AvDeallocateElementCallback callback, AvDynamicArray dynamicArray);
 

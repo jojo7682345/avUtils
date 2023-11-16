@@ -4,6 +4,7 @@
 #include "avTypes.h"
 
 #define AV_STRING_NULL ((uint64)-1)
+#define AV_STRING_FULL_LENGTH 0
 
 typedef struct AvString {
 	char* chrs;
@@ -25,7 +26,7 @@ typedef struct AvAllocatedString {
 } AvAllocatedString;
 
 #define AV_STRL(str, length) (AvString){ .chrs=str, .len=length }
-#define AV_STR(str) AV_STRL(str,avStringLength(str)-1)
+#define AV_STR(str) AV_STRL(str,avStringLength(str))
 #define AV_STR_ARR(arr) AV_STRL(arr,sizeof(arr)/sizeof(char))
 
 uint64 avStringLength(const char* str);
@@ -42,13 +43,25 @@ uint64 avStringFindCount(AvString str, AvString find);
 void avStringReplaceChar(AvString str, char original, char replacement);
 
 uint64 avStringReplace(AvString str, AvString sequence, AvString replacement, AvAllocatedString* result);
+void avStringJoin(AvString strA, AvString strB, AvAllocatedString* result);
+
+#define avStringMemoryStoreCharArraysVA(result, ...) avStringMemoryStoreCharArraysVA_(result, __VA_ARGS__, NULL);
+void avStringMemoryStoreCharArraysVA_(AvAllocatedString* result, ...);
+void avStringMemoryStoreCharArrays(AvAllocatedString* result, uint32 count, const char* strs[]);
 
 void avStringMemoryAllocate(uint64 size, AvStringMemory* memory);
+void avStringMemoryStore(AvString str, uint64 offset, uint64 len, AvStringMemory* memory);
+void avStringMemoryCreateString(uint64 offset, uint64 len, AvAllocatedString* allocatedString, AvStringMemory* memory);
+
+void avStringClone(uint64 offset, uint64 len, AvString str, AvAllocatedString* allocatedString);
+
 void avAllocatedStringCreate(AvString str, AvAllocatedString* allocatedString);
 void avAllocatedStringDestroy(AvAllocatedString* str);
 void avStringMemoryFree(AvStringMemory* memory);
 
-void AvStringPrint(AvString str);
+void avStringPrint(AvString str);
+void avStringPrintLn(AvString str);
+void avStringPrintln(AvString str);
 
 #ifndef NDEBUG
 #define avStringDebugContextStart avStringDebugContextStart_()
@@ -57,6 +70,8 @@ void AvStringPrint(AvString str);
 #define avStringDebugContextStart() (void)
 #define avStringDebugContextEnd() (void)
 #endif
+
+
 
 void avStringDebugContextStart_();
 void avStringDebugContextEnd_();
