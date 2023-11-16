@@ -55,6 +55,9 @@ static Page* addPage(uint32 count, AvDynamicArray dynamicArray) {
 	if (dynamicArray->lastPage) {
 		dynamicArray->lastPage->next = page;
 	}
+	if(dynamicArray->data == nullptr){
+		dynamicArray->data = page;
+	}
 	dynamicArray->lastPage = page;
 	dynamicArray->pageCount++;
 	return page;
@@ -120,6 +123,10 @@ bool32 avDynamicArrayCreate(uint32 initialSize, uint64 dataSize, AvDynamicArray*
 	return 1;
 }
 
+static void* getPtr(Page* page, uint32 index, AvDynamicArray dynamicArray) {
+	return (byte*)page->data + (uint64)index * dynamicArray->dataSize;
+}
+
 void avDynamicArrayDestroy(AvDynamicArray dynamicArray) {
 	if (dynamicArray == nullptr) {
 		return;
@@ -129,7 +136,7 @@ void avDynamicArrayDestroy(AvDynamicArray dynamicArray) {
 
 		if (dynamicArray->deallocElement) {
 			for (uint i = 0; i < page->count; i++) {
-				dynamicArray->deallocElement(getPtr(page, i, dynamicArray));
+				dynamicArray->deallocElement(getPtr(page, i, dynamicArray), dynamicArray->dataSize);
 			}
 		}
 
@@ -140,9 +147,7 @@ void avDynamicArrayDestroy(AvDynamicArray dynamicArray) {
 	avFree(dynamicArray);
 }
 
-static void* getPtr(Page* page, uint32 index, AvDynamicArray dynamicArray) {
-	return (byte*)page->data + (uint64)index * dynamicArray->dataSize;
-}
+
 
 static Page* getPage(uint32* index, AvDynamicArray dynamicArray) {
 	Page* page = dynamicArray->data;
@@ -225,7 +230,7 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 		return false;
 	}
 
-	if (dynamicArray->deallocateElement) {
+	if (dynamicArray->deallocElement) {
 		dynamicArray->deallocElement(getPtr(page, index, dynamicArray), dynamicArray->dataSize);
 	}
 
@@ -235,6 +240,9 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 
 	if (page->next && page->next->count != 0) {
 		resizePage(page, page->count-1, dynamicArray);
+	}else{
+		page->count--;
+		dynamicArray->count--;
 	}
 }
 
