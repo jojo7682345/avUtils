@@ -4,6 +4,8 @@
 #include <AvUtils/avDataStructures.h>
 #include <AvUtils/avLogging.h>
 #include <AvUtils/avString.h>
+#include <AvUtils/avFileSystem.h>
+#include <AvUtils/avProcess.h>
 
 #include <stdio.h>
 
@@ -185,6 +187,12 @@ void testDynamicArray() {
 		printf("|\n");
 	}
 
+	uint32* buffer = avCallocate(avDynamicArrayGetSize(arr), sizeof(uint32), "");
+	avDynamicArrayReadRange(buffer, avDynamicArrayGetSize(arr), 0, sizeof(uint32), 0, arr);
+	for(uint i = 0; i < avDynamicArrayGetSize(arr); i++){
+		printf("%u\n", buffer[i]);
+	}
+
 	avDynamicArrayDestroy(arr);
 }
 
@@ -193,7 +201,7 @@ void testString() {
 	
 	avStringDebugContextStart;
 
-	char c_str[] = "test string__";
+	char c_str[] = "test string_ ";
 	AvString str = AV_STR(c_str);
 
 	strOffset offset = avStringFindFirstOccranceOfChar(str, ' ');
@@ -201,19 +209,86 @@ void testString() {
 	printf("char ' ' offset of %lu\n", offset);
 
 	avStringReplaceChar(str, ' ', '_');
-	AvStringPrint(str);
+	avStringPrint(str);
 	printf("\n");
 
 	AvAllocatedString newString;
 	avStringReplace(str, AV_STR("_"), AV_STR(" insert "), &newString);
 	
-	AvStringPrint(newString.str);
+	avStringPrint(newString.str);
 
 	avAllocatedStringDestroy(&newString);
 
 	printf("\n");
 
 	avStringDebugContextEnd;
+}
+
+void testFile() {
+
+	avStringDebugContextStart;
+
+	AvAllocatedString filePath;
+	avFileBuildPathVAR("README.md", &filePath, "C:", "SDK_CCR", "avUtils");
+
+	AvFile file;
+	avFileHandleCreate(filePath.str, &file);
+
+	AvFileNameProperties* nameProperties = avFileHandleGetFileNameProperties(file);
+	avStringPrintln(nameProperties->fileFullPath.str);
+	avStringPrintln(nameProperties->fileName.str);
+	avStringPrintln(nameProperties->filePath.str);
+	avStringPrintln(nameProperties->fileExtension.str);
+	avStringPrintln(nameProperties->fileNameWithoutExtension.str);
+
+	if(!avFileExists(file)){
+		printf("file %s does not exits\n",nameProperties->fileFullPath.str.chrs);
+	}else{
+		printf("file %s exists\n", nameProperties->fileFullPath.str.chrs);
+	}
+
+	AvDateTime created = avFileGetAccessedTime(file);
+
+	AvAllocatedString timeString;
+	avTimeConvertToString(created, &timeString, AV_DATE_FORMAT_SS_MM_HH_DD_MM_YYYY);
+	printf("file was created at ");
+	avStringPrintLn(timeString.str);
+	avAllocatedStringDestroy(&timeString);
+
+	uint64 size = avFileGetSize(file);
+	printf("file size : %lu\n", size);
+
+	avFileOpen(file,(AvFileOpenOptions){.openMode=AV_FILE_OPEN_READ,.binary=false,.update=false});
+
+	char* buffer = avAllocate(size+1,"read buffer allocation");
+	buffer[size-1] = '\0';
+
+	avFileRead(buffer, size, file);
+
+	printf(buffer);
+
+	avFileClose(file);
+
+	avFileHandleDestroy(file);
+	avAllocatedStringDestroy(&filePath);
+
+	avStringDebugContextEnd;
+}
+
+void testProcess(){
+	AvProcess gcc;
+	avProcessCreate("gcc", NULL, NULL, &gcc);
+
+	if(!avProcessStart(0, NULL, gcc)){
+		printf("failed to start gcc\n");
+	}
+	uint32 retCode = 0;
+	if(!avProcessWaitForTermination(&retCode, gcc)){
+		printf("failed to return from gcc\n");
+	}
+
+	avProcessDestroy(gcc);
+
 }
 
 int main() {
@@ -223,6 +298,8 @@ int main() {
 	testThread();
 	testMutex();
 	testString();
+	testFile();
+	//testProcess();
 	return 0;
 
 }
