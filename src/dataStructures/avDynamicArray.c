@@ -305,8 +305,8 @@ uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 s
 
 	byte* dataPtr = (byte*)data + offset;
 	for (uint i = 0; i < count; i++) {
-		if (!avDynamicArrayRead(data, startIndex + i, dynamicArray)) {
-			return i + 1;
+		if (!avDynamicArrayRead(dataPtr, startIndex + i, dynamicArray)) {
+			return i;
 		}
 		dataPtr += stride;
 	}
@@ -353,6 +353,26 @@ void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 			return;
 		}
 	}
+}
+
+void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray){
+
+	Page* page = createPage(dynamicArray->capacity, dynamicArray->dataSize);
+	avDynamicArrayReadRange(page->data, dynamicArray->count, 0, dynamicArray->dataSize, 0, dynamicArray);
+	page->count = dynamicArray->count;
+
+	Page* prevPages = dynamicArray->data;
+	dynamicArray->data = page;
+	dynamicArray->lastPage = page;
+	dynamicArray->pageCount = 1;
+
+	Page* tmpPage = prevPages;
+	while(tmpPage){
+		Page* nextPage = tmpPage->next;
+		destroyPage(tmpPage);
+		tmpPage = nextPage;
+	}
+
 }
 
 void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src) {

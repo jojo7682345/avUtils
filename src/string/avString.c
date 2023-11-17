@@ -17,7 +17,7 @@ static StringDebugContext debugContext;
 uint64 avStringLength(const char* str) {
 	uint64 length = 0;
 	while (str[length++]) {}
-	return length;
+	return length-1;
 }
 
 strOffset avStringFindLastOccuranceOfChar(AvString str, char chr) {
@@ -166,6 +166,11 @@ void avStringJoin(AvString strA, AvString strB, AvAllocatedString* result){
 	avStringMemoryStore(strB, strA.len, AV_STRING_FULL_LENGTH, result->memory);
 }
 
+void avStringMemoryCreatePersistent(AvPersistentStringMemory* memory){
+	(*memory) = avCallocate(1, sizeof(AvStringMemory), "allocating persistent Memory");
+	(*memory)->persistentlyAllocated = true;
+}
+
 void avStringMemoryAllocate(uint64 size, AvStringMemory* memory) {
 #ifndef NDEBUG
 	if (debugContext) {
@@ -306,6 +311,9 @@ void avStringMemoryFree(AvStringMemory* memory) {
 		}	
 	}
 #endif
+	if(memory->persistentlyAllocated){
+		avFree(memory);
+	}
 }
 
 void avStringPrint(AvString str) {

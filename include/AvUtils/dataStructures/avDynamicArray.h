@@ -39,6 +39,7 @@ uint32 avDynamicArrayGetCapacity(AvDynamicArray dynamicArray);
 uint64 avDynamicArrayGetDataSize(AvDynamicArray dynamicArray);
 
 void avDynamicArrayTrim(AvDynamicArray dynamicArray);
+void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray);
 
 /// <summary>
 /// Appends the source array to the destination array. Transfers ownership of all the data within the source array.

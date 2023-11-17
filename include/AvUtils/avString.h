@@ -5,20 +5,23 @@
 
 #define AV_STRING_NULL ((uint64)-1)
 #define AV_STRING_FULL_LENGTH 0
+#define AV_STRING_PRINTF_CODE "%.*s"
 
 typedef struct AvString {
-	char* chrs;
 	uint64 len;
+	char* chrs;
 } AvString;
 
 typedef struct AvStringMemory {
 	char* data;
 	uint64 size;
 	uint32 referenceCount;
+	bool32 persistentlyAllocated;
 #ifndef NDEBUG
 	uint32 allocationIndex;
 #endif
 }AvStringMemory;
+typedef AvStringMemory* AvPersistentStringMemory;
 
 typedef struct AvAllocatedString {
 	AvString str;
@@ -49,6 +52,7 @@ void avStringJoin(AvString strA, AvString strB, AvAllocatedString* result);
 void avStringMemoryStoreCharArraysVA_(AvAllocatedString* result, ...);
 void avStringMemoryStoreCharArrays(AvAllocatedString* result, uint32 count, const char* strs[]);
 
+void avStringMemoryCreatePersistent(AvPersistentStringMemory* memory);
 void avStringMemoryAllocate(uint64 size, AvStringMemory* memory);
 void avStringMemoryStore(AvString str, uint64 offset, uint64 len, AvStringMemory* memory);
 void avStringMemoryCreateString(uint64 offset, uint64 len, AvAllocatedString* allocatedString, AvStringMemory* memory);
@@ -59,13 +63,14 @@ void avAllocatedStringCreate(AvString str, AvAllocatedString* allocatedString);
 void avAllocatedStringDestroy(AvAllocatedString* str);
 void avStringMemoryFree(AvStringMemory* memory);
 
+
 void avStringPrint(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
 #ifndef NDEBUG
-#define avStringDebugContextStart avStringDebugContextStart_()
-#define avStringDebugContextEnd avStringDebugContextEnd_()
+#define avStringDebugContextStart avStringDebugContextStart_();{
+#define avStringDebugContextEnd }avStringDebugContextEnd_()
 #else
 #define avStringDebugContextStart() (void)
 #define avStringDebugContextEnd() (void)
