@@ -193,8 +193,8 @@ uint joinThread(AvThread thread) {
 	return (uint)(unsigned long)retCode;
 }
 
-void sleepThread(uint64 micros) {
-	usleep(micros);
+void sleepThread(uint64 milis) {
+	usleep(micros*1000U);
 }
 
 #endif
