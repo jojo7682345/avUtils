@@ -260,7 +260,7 @@ void testFile() {
 
 	avFileOpen(file,(AvFileOpenOptions){.openMode=AV_FILE_OPEN_READ,.binary=false,.update=false});
 
-	char* buffer = avAllocate(size+1,"read buffer allocation");
+	char* buffer = avCallocate(1,size+1,"read buffer allocation");
 	buffer[size-1] = '\0';
 
 	avFileRead(buffer, size, file);

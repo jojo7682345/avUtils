@@ -69,8 +69,8 @@ void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
 #ifndef NDEBUG
-#define avStringDebugContextStart avStringDebugContextStart_();{
-#define avStringDebugContextEnd }avStringDebugContextEnd_()
+#define avStringDebugContextStart avStringDebugContextStart_();
+#define avStringDebugContextEnd avStringDebugContextEnd_()
 #else
 #define avStringDebugContextStart() (void)
 #define avStringDebugContextEnd() (void)
