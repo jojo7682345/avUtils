@@ -8,9 +8,11 @@
 #include <strsafe.h>
 #include <process.h>
 #else
-#include <pthread.h>
+#define __USE_MISC
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 #endif
 
 typedef struct AvThread_T {

@@ -8,7 +8,12 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-
+#include <errno.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #endif
 
 typedef struct AvProcess_T {
@@ -26,7 +31,7 @@ typedef struct AvProcess_T {
 } AvProcess_T;
 
 static void configureProcess(AvProcess process);
-static bool32 executeProcess(uint32 argC, const char* argV[], AvProcess process);
+static bool32 executeProcess(AvString cmd, AvProcess process);
 static bool32 waitForProcess(AvProcess process);
 
 void avProcessCreate(const char* executable, FileDescriptor* input, FileDescriptor* output, AvProcess* process) {
@@ -39,7 +44,18 @@ void avProcessCreate(const char* executable, FileDescriptor* input, FileDescript
 
 
 bool32 avProcessStart(uint32 argC, const char* argV[], AvProcess process) {
-    return executeProcess(argC, argV, process);
+    avStringDebugContextStart;
+
+    AvAllocatedString args = {0};
+    avStringMemoryStoreCharArrays(&args, argC, argV);
+    AvAllocatedString cmd;
+    avStringJoin(AV_STR((char *)process->program), args.str, &cmd);
+    avAllocatedStringDestroy(&args);
+    bool32 success = executeProcess(cmd.str, process);
+    avAllocatedStringDestroy(&cmd);
+
+    avStringDebugContextEnd;
+    return success;
 }
 
 bool32 avProcessWaitForTermination(uint32* retCode, AvProcess process){
@@ -93,19 +109,11 @@ static void configureProcess(AvProcess process) {
     ZeroMemory(&process->piProcInfo, sizeof(PROCESS_INFORMATION));
 }
 
-static bool32 executeProcess(uint32 argC, const char* argV[], AvProcess process) {
-
-    avStringDebugContextStart;
-    AvAllocatedString args = {0};
-    avStringMemoryStoreCharArrays(&args, argC, argV);
-    AvAllocatedString cmd;
-    avStringJoin(AV_STR((char*)process->program), args.str, &cmd);
-    avAllocatedStringDestroy(&args);
-
+static bool32 executeProcess(AvString cmd, AvProcess process) {
 
     int32 bSuccess = CreateProcessA(
         NULL,
-        (char*)cmd.str.chrs,
+        (char*)cmd.chrs,
         NULL,
         NULL,
         TRUE,
@@ -122,8 +130,7 @@ static bool32 executeProcess(uint32 argC, const char* argV[], AvProcess process)
     }
     CloseHandle(process->piProcInfo.hThread);
     process->pid = process->piProcInfo.hProcess;
-    avAllocatedStringDestroy(&cmd);
-    avStringDebugContextEnd;
+
     return true;
 }
 
@@ -155,34 +162,48 @@ bool32 waitForProcess(AvProcess process){
 
 #else
 
-static bool32 executeProcess(uint32 argC, const char* argV[], AvProcess process) {
-     pid_t cpid = fork();
-    if (cpid < 0) {
-        printf("Could not fork child process: %s: %s", cmd_show(process.), strerror(errno));
-        return false;
-    }
+static void configureProcess(AvProcess process){
+    printf("still has to be implemented\n");
+    //TODO: implement
+    return;
+}
 
-    if (cpid == 0) {
-        Cstr_Array args = cstr_array_append(cmd.line, NULL);
+static bool32 waitForProcess(AvProcess process){
+    printf("still has to be implemented\n");
+    //TODO: implement
+    return false;
+}
 
-        if (fdin) {
-            if (dup2(*fdin, STDIN_FILENO) < 0) {
-                printf("Could not setup stdin for child process: %s", strerror(errno));
-            }
-        }
+static bool32 executeProcess(AvString cmd, AvProcess process) {
+    printf("still has to be implemented\n");
+    // TODO: implement
+    //  PID cpid = fork();
+    //  if (cpid < 0) {
+    //      printf("Could not fork child process: %s: %s", process->program, strerror(errno));
+    //      return false;
+    //  }
 
-        if (fdout) {
-            if (dup2(*fdout, STDOUT_FILENO) < 0) {
-                printf("Could not setup stdout for child process: %s", strerror(errno));
-            }
-        }
-        if (execvp(args.elems[0], (char* const*)args.elems) < 0) {
-            printf("Could not exec child process: %s: %s",
-                  cmd, strerror(errno));
-        }
-    }
+    // if (cpid == 0) {
+        
 
-    return cpid;
+    //     // if (fdin) {
+    //     //     if (dup2(*fdin, STDIN_FILENO) < 0) {
+    //     //         printf("Could not setup stdin for child process: %s", strerror(errno));
+    //     //     }
+    //     // }
+
+    //     // if (fdout) {
+    //     //     if (dup2(*fdout, STDOUT_FILENO) < 0) {
+    //     //         printf("Could not setup stdout for child process: %s", strerror(errno));
+    //     //     }
+    //     // }
+    //     // if (execvp(args.elems[0], (char* const*)args.elems) < 0) {
+    //     //     printf("Could not exec child process: %s: %s",
+    //     //           cmd, strerror(errno));
+    //     // }
+    // }
+
+    return true;//cpid;
 }
 
 #endif
