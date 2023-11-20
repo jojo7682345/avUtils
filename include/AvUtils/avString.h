@@ -37,8 +37,8 @@ typedef struct AvConstString {
 #define AV_STR(str) AV_STRL(str,avStringLength(str))
 #define AV_STR_ARR(arr) AV_STRL(arr,sizeof(arr)/sizeof(char))
 
-#define AV_CSTRL(str, length) (AvString){ .chrs=str, .len=length }
-#define AV_CSTR(str) AV_STRL(str, avStringLength((AvString)str))
+#define AV_CSTRL(str, length) (AvConstString){ .chrs=str, .len=length }
+#define AV_CSTR(str) AV_CSTRL(str, avStringLength(str))
 #define AV_CSTR_ARR(arr) AV_CSTRL(arr, sizeof(arr)/sizeof(char))
 
 uint64 avStringLength(const char* str);
