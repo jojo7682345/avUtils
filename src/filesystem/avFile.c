@@ -180,16 +180,13 @@ uint64 avFileGetSize(AvFile file){
 uint64 avFileRead(void* dst, uint64 size, AvFile file){
 
 	if((file->status & AV_FILE_STATUS_OPEN_READ | AV_FILE_STATUS_OPEN_UPDATE) == 0){
-		//TODO: better log
-		printf("Tried to read file that is not open for reading\n");
 		return 0;
 	}
-	return fread(dst, 1, size, file->filehandle);
+	return fread(dst, size, 1, file->filehandle);
 }
 
 uint64 avFileWrite(void* src, uint64 size, AvFile file){
 	if((file->status & AV_FILE_STATUS_OPEN_WRITE | AV_FILE_STATUS_OPEN_UPDATE) == 0){
-		printf("Tried to read file that is not open for writing\n");
 		return 0;
 	}
 	return fwrite(src, size, 1, file->filehandle);
