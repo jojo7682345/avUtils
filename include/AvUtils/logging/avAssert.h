@@ -1,5 +1,7 @@
 #ifndef __AV_ASSERT__
 #define __AV_ASSERT__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -11,4 +13,5 @@
 
 void avAssertFailed(bool32 condition, const char* expression, const char* message, uint64 line, const char* function, const char* file);
 
+C_SYMBOLS_END
 #endif//__AV_ASSERT__

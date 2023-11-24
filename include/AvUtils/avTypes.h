@@ -1,5 +1,7 @@
 #ifndef __AV_TYPES__
 #define __AV_TYPES__
+#include "avDefinitions.h"
+C_SYMBOLS_START
 
 #ifndef __cplusplus
 #define true 1
@@ -46,4 +48,5 @@ typedef uint32 bool32;
 typedef void (*AvDeallocateElementCallback)(void*, uint64);
 typedef uint64 strOffset;
 
+C_SYMBOLS_END
 #endif//__AV_TYPES__

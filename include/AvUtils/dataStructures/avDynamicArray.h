@@ -1,5 +1,8 @@
 #ifndef __AV_DYNAMIC_ARRAY__
 #define __AV_DYNAMIC_ARRAY__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
+
 
 #include "../avTypes.h"
 
@@ -49,7 +52,15 @@ void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray);
 void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
 
 
+void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
+
+
+
+#endif//__AV_DYNAMIC_ARRAY__
+
 #ifdef AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
+#ifndef __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
+#define __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
 
 uint32 avDynamicArrayGetPageCount(AvDynamicArray dynamicArray);
 uint32 avDynamicArrayGetPageSize(uint32 pageNum, AvDynamicArray dynamicArray);
@@ -57,6 +68,11 @@ uint32 avDynamicArrayGetPageCapacity(uint32 pageNum, AvDynamicArray dynamicArray
 void* avDynamicArrayGetPageDataPtr(uint32 pageNum, AvDynamicArray dynamicArray);
 uint64 avDynamicArrayGetPageDataSize(uint32 pageNum, AvDynamicArray dynamicArray);
 
-#endif
+#define AV_DYNAMIC_ARRAY_INVALID_PAGE ((uint32)-1)
+uint32 avDynamicArrayGetIndexPage(uint32* index, AvDynamicArray dynamicArray);
+void* avDynamicArrayGetPtr(uint32 index, AvDynamicArray dynamicArray);
 
-#endif//__DYNAMIC_ARRAY__
+#endif//__AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
+
+C_SYMBOLS_END
+#endif

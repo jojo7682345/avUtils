@@ -1,5 +1,7 @@
 #ifndef __AV_GRID__
 #define __AV_GRID__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -54,5 +56,5 @@ void* avGridGetPtr(uint32 x, uint32 y, AvGrid grid);
 /// <param name="grid"></param>
 void aGridDestroy(AvGrid grid);
 
-
+C_SYMBOLS_END
 #endif//__AV_GRID__

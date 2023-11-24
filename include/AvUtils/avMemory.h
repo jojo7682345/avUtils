@@ -1,9 +1,7 @@
 #ifndef __AV_MEMORY__
 #define __AV_MEMORY__
-
-#ifdef __cplusplus
-extern "C" {
-#endif 
+#include "avDefinitions.h"
+C_SYMBOLS_START
 
 #include "avTypes.h"
 
@@ -25,8 +23,5 @@ void* avReallocate_(void* data, uint64 size, const char* message, uint line, con
 void avFree_(void* data, uint line, const char* func, const char* file);
 #define avFree(data) avFree_(data, __LINE__, __func__, __FILE__)
 
-#ifdef __cplusplus
-}
-#endif 
-
+C_SYMBOLS_END
 #endif //__AV_MEMORY__

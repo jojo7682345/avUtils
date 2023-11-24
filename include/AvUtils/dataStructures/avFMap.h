@@ -1,5 +1,7 @@
 #ifndef __AV_FIXED_MAP__
 #define __AV_FIXED_MAP__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -24,4 +26,5 @@ void avFMapClear(void* data, AvFMap map);
 
 void avFMapDestroy(AvFMap map);
 
+C_SYMBOLS_END
 #endif//__AV_MAP__

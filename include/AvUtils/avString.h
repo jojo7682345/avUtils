@@ -1,5 +1,7 @@
 #ifndef __AV_STRING__
 #define __AV_STRING__
+#include "avDefinitions.h"
+C_SYMBOLS_START
 
 #include "avTypes.h"
 
@@ -33,11 +35,11 @@ typedef struct AvConstString {
 	const char* chrs;
 } AvConstString;
 
-#define AV_STRL(str, length) (AvString){ .chrs=str, .len=length }
+#define AV_STRL(str, length) (AvString){.len=length,  .chrs=str }
 #define AV_STR(str) AV_STRL(str,avStringLength(str))
 #define AV_STR_ARR(arr) AV_STRL(arr,sizeof(arr)/sizeof(char))
 
-#define AV_CSTRL(str, length) (AvConstString){ .chrs=str, .len=length }
+#define AV_CSTRL(str, length) (AvConstString){.len=length, .chrs=str }
 #define AV_CSTR(str) AV_CSTRL(str, avStringLength(str))
 #define AV_CSTR_ARR(arr) AV_CSTRL(arr, sizeof(arr)/sizeof(char))
 
@@ -90,5 +92,5 @@ void avStringPrintln(AvString str);
 void avStringDebugContextStart_();
 void avStringDebugContextEnd_();
 
-
+C_SYMBOLS_END
 #endif//__AV_STRING__

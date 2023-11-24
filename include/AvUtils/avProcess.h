@@ -1,5 +1,7 @@
 #ifndef __AV_PROCESS__
 #define __AV_PROCESS__
+#include "avDefinitions.h"
+C_SYMBOLS_START
 
 #include "avTypes.h"
 
@@ -16,4 +18,5 @@ bool32 avProcessWaitForTermination(uint32* retCode, AvProcess process);
 
 void avProcessDestroy(AvProcess process);
 
+C_SYMBOLS_END
 #endif//__AV_PROCESS__

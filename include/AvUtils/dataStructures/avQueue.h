@@ -1,5 +1,7 @@
 #ifndef __AV_QUEUE__
 #define __AV_QUEUE__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -77,4 +79,5 @@ uint64 avQueueGetSize(AvQueue queue);
 uint64 avQueueGetElementSize(AvQueue queue);
 
 
+C_SYMBOLS_END
 #endif //__AV_QUEUE__

@@ -1,5 +1,7 @@
 #ifndef __AV_FILE__
 #define __AV_FILE__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 #include "../avString.h"
@@ -37,8 +39,6 @@ typedef struct AvFileOpenOptions{
 	bool8 update;
 	bool8 binary;
 } AvFileOpenOptions;
-
-
 
 #define AV_FILE_MAX_FILENAME_LENGTH 512
 #define AV_FILE_MAX_PATH_LENGTH 512
@@ -78,4 +78,5 @@ void avFileClose(AvFile file);
 
 void avFileHandleDestroy(AvFile file);
 
+C_SYMBOLS_END
 #endif//__AV_FILE__

@@ -1,5 +1,8 @@
 #ifndef __AV_TABLE__
 #define __AV_TABLE__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
+
 
 #include "../avTypes.h"
 
@@ -29,5 +32,5 @@ uint32 avTableGetRows(AvTable table);
 
 void avTableDestroy(AvTable table);
 
-
+C_SYMBOLS_END
 #endif//__AV_TABLE__

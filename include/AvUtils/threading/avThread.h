@@ -1,5 +1,7 @@
 #ifndef __AV_THREAD__
 #define __AV_THREAD__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -20,4 +22,5 @@ void avThreadDestroy(AvThread thread);
 
 void avThreadSleep(uint64 milis);
 
+C_SYMBOLS_END
 #endif
