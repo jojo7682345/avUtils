@@ -195,7 +195,7 @@ void avStringMemoryStore(AvString str, uint64 offset, uint64 len, AvStringMemory
 	memcpy(memory->data + offset, str.chrs, len);
 }
 
-void avStringMemoryStoreCharArraysAV_(AvAllocatedString* result, ...){
+void avStringMemoryStoreCharArraysVA_(AvAllocatedString* result, ...) {
 	
 	AvDynamicArray arr;
 	avDynamicArrayCreate(0, sizeof(const char*), &arr);
