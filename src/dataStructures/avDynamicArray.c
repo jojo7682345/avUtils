@@ -26,7 +26,7 @@ typedef struct AvDynamicArray_T {
 	uint32 count;
 	uint32 capacity;
 
-	AvDeallocateElementCallback deallocElement; 
+	AvDeallocateElementCallback deallocElement;
 } AvDynamicArray_T;
 
 static Page* createPage(uint32 capacity, uint64 dataSize) {
@@ -55,7 +55,7 @@ static Page* addPage(uint32 count, AvDynamicArray dynamicArray) {
 	if (dynamicArray->lastPage) {
 		dynamicArray->lastPage->next = page;
 	}
-	if(dynamicArray->data == nullptr){
+	if (dynamicArray->data == nullptr) {
 		dynamicArray->data = page;
 	}
 	dynamicArray->lastPage = page;
@@ -239,8 +239,8 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 	memmove(getPtr(page, index, dynamicArray), getPtr(page, index + 1, dynamicArray), (uint64)followingCount * dynamicArray->dataSize);
 
 	if (page->next && page->next->count != 0) {
-		resizePage(page, page->count-1, dynamicArray);
-	}else{
+		resizePage(page, page->count - 1, dynamicArray);
+	} else {
 		page->count--;
 		dynamicArray->count--;
 	}
@@ -355,7 +355,7 @@ void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 	}
 }
 
-void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray){
+void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray) {
 
 	Page* page = createPage(dynamicArray->capacity, dynamicArray->dataSize);
 	avDynamicArrayReadRange(page->data, dynamicArray->count, 0, dynamicArray->dataSize, 0, dynamicArray);
@@ -367,7 +367,7 @@ void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray){
 	dynamicArray->pageCount = 1;
 
 	Page* tmpPage = prevPages;
-	while(tmpPage){
+	while (tmpPage) {
 		Page* nextPage = tmpPage->next;
 		destroyPage(tmpPage);
 		tmpPage = nextPage;
@@ -389,6 +389,56 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src) {
 	*src = nullptr;
 }
 
+static Page* clonePage(Page* src, uint64 dataSize) {
+	if(src==NULL){
+		return NULL;
+	}
+	Page* page = createPage(src->capacity, dataSize);
+	memcpy(page->data, src->data, (uint64)src->capacity * dataSize);
+	page->count = src->count;
+	
+}
+
+void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray) {
+
+	avDynamicArrayCreate(0, src->dataSize, dynamicArray);
+	(*dynamicArray)->growSize = src->growSize;
+	(*dynamicArray)->deallocElement = src->deallocElement;
+	
+	Page* page = src->data;
+	Page* dstPage = NULL; 
+	Page* startPage = NULL;
+	Page* prevPage = NULL;
+	while(page){
+		dstPage = clonePage(page, src->dataSize);
+		if(prevPage){
+			prevPage->next = dstPage;
+		}
+		dstPage->prev = prevPage;
+		
+		if(startPage==NULL){
+			startPage = dstPage;
+		}
+		page = page->next;
+		prevPage = dstPage;
+
+		if(page== src->lastPage){
+			break;
+		}
+	}
+
+	(*dynamicArray)->data = startPage;
+	(*dynamicArray)->count = src->count;
+	(*dynamicArray)->capacity = src->capacity;
+	(*dynamicArray)->lastPage = dstPage;
+
+	startPage->prev = src->data->prev;
+	if(src->lastPage){
+		dstPage->next = src->lastPage->next;
+	}
+
+}
+
 uint32 avDynamicArrayGetPageCount(AvDynamicArray dynamicArray) {
 	return dynamicArray->pageCount;
 }
@@ -407,7 +457,7 @@ static Page* findPage(uint32 pageNum, AvDynamicArray dynamicArray) {
 }
 
 uint32 avDynamicArrayGetPageSize(uint32 pageNum, AvDynamicArray dynamicArray) {
-	
+
 	Page* page = findPage(pageNum, dynamicArray);
 	if (page == NULL) {
 		return 0;
@@ -439,5 +489,32 @@ uint64 avDynamicArrayGetPageDataSize(uint32 pageNum, AvDynamicArray dynamicArray
 	return (uint64)page->capacity * dynamicArray->dataSize;
 }
 
+
+uint32 avDynamicArrayGetIndexPage(uint32* index, AvDynamicArray dynamicArray) {
+	Page* page = getPage(index, dynamicArray);
+	uint pageIndex = 0;
+	Page* tmpPage = dynamicArray->data;
+	while (tmpPage != NULL) {
+		if (tmpPage == page) {
+			return pageIndex;
+		}
+		if (tmpPage = dynamicArray->lastPage) {
+			return AV_DYNAMIC_ARRAY_INVALID_PAGE;
+		}
+		pageIndex++;
+		tmpPage = tmpPage->next;
+	}
+	return AV_DYNAMIC_ARRAY_INVALID_PAGE;
+}
+
+void* avDynamicArrayGetPtr(uint32 index, AvDynamicArray dynamicArray) {
+	Page* page = getPage(&index, dynamicArray);
+
+	if (page == NULL) {
+		return nullptr;
+	}
+
+	return getPtr(page, index, dynamicArray);
+}
 
 
