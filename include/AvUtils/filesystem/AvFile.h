@@ -46,16 +46,16 @@ typedef struct AvFileOpenOptions{
 
 typedef struct AvFileNameProperties {
 	AvStringMemory fileStr;
-	AvAllocatedString fileFullPath;
-	AvAllocatedString filePath;
-	AvAllocatedString fileName;
-	AvAllocatedString fileNameWithoutExtension;
-	AvAllocatedString fileExtension;
+	AvString fileFullPath;
+	AvString filePath;
+	AvString fileName;
+	AvString fileNameWithoutExtension;
+	AvString fileExtension;
 }AvFileNameProperties;
 
 #define avFileBuildPathVAR(fileName, filePath, ...) avFileBuildPathVAR_(fileName, filePath, __VA_ARGS__, NULL)
-void avFileBuildPathVAR_(const char* fileName, AvAllocatedString* filePath, ...);
-void avFileBuildPathARR(const char* fileName, AvAllocatedString* filePath, uint32 directoryCount, AvString direcotries[]);
+void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...);
+void avFileBuildPathARR(const char* fileName, AvStringRef filePath, uint32 directoryCount, AvString direcotries[]);
 
 void avFileHandleCreate(AvString filePath, AvFile* file);
 

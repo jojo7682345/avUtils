@@ -46,13 +46,15 @@ void avProcessCreate(const char* executable, FileDescriptor* input, FileDescript
 bool32 avProcessStart(uint32 argC, const char* argV[], AvProcess process) {
     avStringDebugContextStart;
 
-    AvAllocatedString args = {0};
-    avStringMemoryStoreCharArrays(&args, argC, argV);
-    AvAllocatedString cmd;
-    avStringJoin(AV_STR((char *)process->program), args.str, &cmd);
-    avAllocatedStringDestroy(&args);
-    bool32 success = executeProcess(cmd.str, process);
-    avAllocatedStringDestroy(&cmd);
+    AvStringMemory memory;
+    avStringMemoryStoreCharArrays(&memory, argC, argV);
+    AvString arguments;
+    avStringFromMemory(&arguments, 0, AV_STRING_FULL_LENGTH, &memory);
+    AvString cmd;
+    avStringJoin(&cmd, AV_CSTR(process->program), arguments);
+    avStringFree(&arguments);
+    bool32 success = executeProcess(cmd, process);
+    avStringFree(&cmd);
 
     avStringDebugContextEnd;
     return success;

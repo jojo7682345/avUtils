@@ -34,7 +34,7 @@ typedef struct AvFile_T {
 #endif
 } AvFile_T;
 
-void avFileBuildPathVAR_(const char* fileName, AvAllocatedString* filePath, ...) {
+void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...) {
 
 	AvDynamicArray arr;
 	avDynamicArrayCreate(0, sizeof(AvString), &arr);
@@ -42,9 +42,7 @@ void avFileBuildPathVAR_(const char* fileName, AvAllocatedString* filePath, ...)
 	va_start(args, filePath);
 	char* arg;
 	while (arg = va_arg(args, char*)) {
-		AvString currentArg = { 0 };
-		currentArg.chrs = (char*)arg;
-		currentArg.len = avStringLength(arg);
+		AvString currentArg = AV_CSTR(arg);
 		avDynamicArrayAdd(&currentArg, arr);
 	}
 	va_end(args);
@@ -55,27 +53,26 @@ void avFileBuildPathVAR_(const char* fileName, AvAllocatedString* filePath, ...)
 	avDynamicArrayDestroy(arr);
 }
 
-void avFileBuildPathARR(const char* fileName, AvAllocatedString* filePath, uint32 directoryCount, AvString directories[]) {
+void avFileBuildPathARR(const char* fileName, AvStringRef filePath, uint32 directoryCount, AvString directories[]) {
 
-	AvString fileNameStr = AV_STR((char*)fileName);
+	AvString fileNameStr = AV_CSTR(fileName);
 
 	uint64 length = 0;
 	for (uint i = 0; i < directoryCount; i++) {
 		length += directories[i].len + 1;
 	}
 	length += fileNameStr.len;
-	AvPersistentStringMemory strMem;
-	avStringMemoryCreatePersistent(&strMem);
-	avStringMemoryAllocate(length, strMem);
+	AvStringHeapMemory strMem;
+	avStringMemoryHeapAllocate(length, &strMem);
 
 	uint64 offset = 0;
 	for (uint32 i = 0; i < directoryCount; i++) {
 		avStringMemoryStore(directories[i], offset, directories[i].len, strMem);
 		offset += directories[i].len;
-		avStringMemoryStore(AV_STRL("/", 1), offset++, 1, strMem);
+		avStringMemoryStore(AV_STR("/", 1), offset++, 1, strMem);
 	}
 	avStringMemoryStore(fileNameStr, offset, fileNameStr.len, strMem);
-	avStringMemoryCreateString(0, AV_STRING_FULL_LENGTH, filePath, strMem);
+	avStringFromMemory(filePath, 0, AV_STRING_FULL_LENGTH, strMem);
 
 }
 
@@ -89,26 +86,26 @@ void avFileHandleCreate(AvString filePath, AvFile* file) {
 	AvFileNameProperties* nameProperties = &(*file)->nameProperties;
 	avStringMemoryAllocate(filePathStr.len, &nameProperties->fileStr);
 	avStringMemoryStore(filePathStr, 0, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
-	avStringMemoryCreateString(0, AV_STRING_FULL_LENGTH, &nameProperties->fileFullPath, &nameProperties->fileStr);
+	avStringFromMemory(&nameProperties->fileFullPath, 0, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
 
-	avStringReplaceChar(nameProperties->fileFullPath.str, '\\', '/');
+	avStringReplaceChar(&nameProperties->fileFullPath, '\\', '/');
 
-	strOffset filePathLen = avStringFindLastOccuranceOfChar(nameProperties->fileFullPath.str, '/');
+	strOffset filePathLen = avStringFindLastOccuranceOfChar(nameProperties->fileFullPath, '/');
 	if (filePathLen++ == AV_STRING_NULL) {
 		filePathLen = 0;
 	} else {
-		avStringMemoryCreateString(0, filePathLen, &nameProperties->filePath, &nameProperties->fileStr);
+		avStringFromMemory(&nameProperties->filePath, 0, filePathLen, &nameProperties->fileStr);
 	}
 
-	avStringMemoryCreateString(filePathLen, AV_STRING_FULL_LENGTH, &nameProperties->fileName, &nameProperties->fileStr);
+	avStringFromMemory(&nameProperties->fileName, filePathLen, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
 
-	strOffset fileExtOffset = avStringFindLastOccuranceOfChar(nameProperties->fileName.str, '.');
+	strOffset fileExtOffset = avStringFindLastOccuranceOfChar(nameProperties->fileName, '.');
 	if (fileExtOffset == AV_STRING_NULL) {
 		fileExtOffset = 0;
 	} else {
-		avStringMemoryCreateString(filePathLen + fileExtOffset, AV_STRING_FULL_LENGTH, &nameProperties->fileExtension, &nameProperties->fileStr);
+		avStringFromMemory(&nameProperties->fileExtension, filePathLen + fileExtOffset, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
 	}
-	avStringMemoryCreateString(filePathLen, fileExtOffset, &nameProperties->fileNameWithoutExtension, &nameProperties->fileStr);
+	avStringFromMemory(&nameProperties->fileNameWithoutExtension, filePathLen, fileExtOffset, &nameProperties->fileStr);
 }
 
 AvFileNameProperties* avFileHandleGetFileNameProperties(AvFile file) {
@@ -118,7 +115,7 @@ AvFileNameProperties* avFileHandleGetFileNameProperties(AvFile file) {
 #define statProp(prop) (offsetof(struct stat, prop))
 static void* getFileStat(AvFile file, uint64 offset) {
 	if (!file->statted) {
-		stat(file->nameProperties.fileFullPath.str.chrs, file->stats);
+		stat(file->nameProperties.fileFullPath.chrs, file->stats);
 		file->statted = true;
 	}
 	return (void*)(((byte*)file->stats) + offset);
@@ -127,7 +124,7 @@ static void* getFileStat(AvFile file, uint64 offset) {
 
 bool32 avFileExists(AvFile file) {
 
-	if (access(file->nameProperties.fileFullPath.str.chrs, F_OK) == 0) {
+	if (access(file->nameProperties.fileFullPath.chrs, F_OK) == 0) {
 		return true;
 	} else {
 		return false;
@@ -144,7 +141,7 @@ bool32 avFileOpen(AvFile file, AvFileOpenOptions mode) {
 	(mode.update == true) ? openMode[wi++] = '+' : 0;
 	(mode.binary = true) ? openMode[wi++] = 'b' : 0;
 
-	file->filehandle = fopen(file->nameProperties.fileFullPath.str.chrs, openMode);
+	file->filehandle = fopen(file->nameProperties.fileFullPath.chrs, openMode);
 	if (file->filehandle == NULL) {
 		file->status = AV_FILE_STATUS_CLOSED;
 		return false;

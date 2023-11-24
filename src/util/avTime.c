@@ -16,7 +16,7 @@
     AV_DATE_FORMAT_YY_MM_DD,
 */
 
-void avTimeConvertToString(AvDateTime time, AvAllocatedString* result, AvDateFormat format){
+void avTimeConvertToString(AvDateTime time, AvStringRef result, AvDateFormat format){
 
     const struct formatSize {
         const char* format;
@@ -40,10 +40,9 @@ void avTimeConvertToString(AvDateTime time, AvAllocatedString* result, AvDateFor
     tm.tm_mday = time.day;
     tm.tm_mon = time.month;
     tm.tm_year = time.year - 1900;
-    AvPersistentStringMemory str;
-    avStringMemoryCreatePersistent(&str);
-    avStringMemoryAllocate(formats[format].size, str);
+    AvStringHeapMemory str;
+    avStringMemoryHeapAllocate(formats[format].size, &str);
     strftime(str->data, formats[format].size, formats[format].format, &tm);
-    avStringMemoryCreateString(0, AV_MIN(avStringLength(str->data),formats[format].size), result, str);
+    avStringFromMemory(result, 0, AV_MIN(avCStringLength(str->data), formats[format].size), str);
 
 }

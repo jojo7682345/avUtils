@@ -201,23 +201,20 @@ void testString() {
 	
 	avStringDebugContextStart;
 
-	char c_str[] = "test string_ ";
-	AvString str = AV_STR(c_str);
+	AvString str = AV_CSTR("test string_ ");
 
 	strOffset offset = avStringFindFirstOccranceOfChar(str, ' ');
 
 	printf("char ' ' offset of %lu\n", offset);
 
-	avStringReplaceChar(str, ' ', '_');
+	avStringReplaceChar(&str, ' ', '_');
 	avStringPrint(str);
 	printf("\n");
 
-	AvAllocatedString newString;
-	avStringReplace(str, AV_STR("_"), AV_STR(" insert "), &newString);
+	AvString newString;
+	avStringReplace(&newString, AV_CSTR("_"), AV_CSTR(" insert "));
 	
-	avStringPrint(newString.str);
-
-	avAllocatedStringDestroy(&newString);
+	avStringPrint(newString);
 
 	printf("\n");
 
@@ -228,32 +225,32 @@ void testFile() {
 
 	avStringDebugContextStart;
 
-	AvAllocatedString filePath;
-	avFileBuildPathVAR("README.md", &filePath, "C:", "SDK_CCR", "avUtils");
+	AvString filePath;
+	avFileBuildPathVAR("README.md", &filePath, AV_ROOT_DIR, "SDK_CCR", "avUtils");
 
 	AvFile file;
-	avFileHandleCreate(filePath.str, &file);
+	avFileHandleCreate(filePath, &file);
 
 	AvFileNameProperties* nameProperties = avFileHandleGetFileNameProperties(file);
-	avStringPrintln(nameProperties->fileFullPath.str);
-	avStringPrintln(nameProperties->fileName.str);
-	avStringPrintln(nameProperties->filePath.str);
-	avStringPrintln(nameProperties->fileExtension.str);
-	avStringPrintln(nameProperties->fileNameWithoutExtension.str);
+	avStringPrintln(nameProperties->fileFullPath);
+	avStringPrintln(nameProperties->fileName);
+	avStringPrintln(nameProperties->filePath);
+	avStringPrintln(nameProperties->fileExtension);
+	avStringPrintln(nameProperties->fileNameWithoutExtension);
 
 	if(!avFileExists(file)){
-		printf("file %s does not exits\n",nameProperties->fileFullPath.str.chrs);
+		printf("file %s does not exits\n", nameProperties->fileFullPath.chrs);
 	}else{
-		printf("file %s exists\n", nameProperties->fileFullPath.str.chrs);
+		printf("file %s exists\n", nameProperties->fileFullPath.chrs);
 	}
 
 	AvDateTime created = avFileGetAccessedTime(file);
 
-	AvAllocatedString timeString;
+	AvString timeString;
 	avTimeConvertToString(created, &timeString, AV_DATE_FORMAT_SS_MM_HH_DD_MM_YYYY);
 	printf("file was created at ");
-	avStringPrintLn(timeString.str);
-	avAllocatedStringDestroy(&timeString);
+	avStringPrintLn(timeString);
+	avStringFree(&timeString);
 
 	uint64 size = avFileGetSize(file);
 	printf("file size : %lu\n", size);
@@ -261,7 +258,7 @@ void testFile() {
 	avFileOpen(file,(AvFileOpenOptions){.openMode=AV_FILE_OPEN_READ,.binary=false,.update=false});
 
 	char* buffer = avCallocate(1,size+1,"read buffer allocation");
-	buffer[size-1] = '\0';
+	buffer[size] = '\0';
 
 	avFileRead(buffer, size, file);
 
@@ -270,9 +267,32 @@ void testFile() {
 	avFileClose(file);
 
 	avFileHandleDestroy(file);
-	avAllocatedStringDestroy(&filePath);
+	avStringFree(&filePath);
 
 	avStringDebugContextEnd;
+}
+
+void testDirectory(){
+
+
+	AvDirectoryTree tree;
+	avDirectoryTreeCreate(AV_CSTR("/SDK_CCR/avUtils"), &tree);
+
+	AvDirectoryEntry dir = avDirectoryTreeGetRootDir(tree);
+	avDirectoryExplore(dir);
+	
+	uint32 contentCount = avDirectoryGetContentCount(dir);
+	printf("the folder contains %i entries", contentCount);
+
+	AvDirectoryEntry* dirs = avCallocate(contentCount, sizeof(AvDirectoryEntry), "");
+	avDirectoryGetContents(dirs, dir);
+
+	for(uint i = 0; i < contentCount; i++){
+		AvDirectoryEntry entry = dirs[i];
+		avStringPrintln(entry->path);
+	}
+
+	avDirectoryTreeDestroy(tree);
 }
 
 void testProcess(){
@@ -287,6 +307,8 @@ void testProcess(){
 		printf("failed to return from gcc\n");
 	}
 
+
+
 	avProcessDestroy(gcc);
 
 }
@@ -299,6 +321,7 @@ int main() {
 	testMutex();
 	testString();
 	testFile();
+	testDirectory();
 	//testProcess();
 	return 0;
 

@@ -26,6 +26,6 @@ typedef enum AvDateFormat {
     AV_DATE_FORMAT_YY_MM_DD,
 }AvDateFormat;
 
-void avTimeConvertToString(AvDateTime time, AvAllocatedString* result, AvDateFormat format);
+void avTimeConvertToString(AvDateTime time, AvStringRef dst, AvDateFormat format);
 
 #endif//__AV_TIME__
