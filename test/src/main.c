@@ -211,10 +211,12 @@ void testString() {
 	avStringPrint(str);
 	printf("\n");
 
-	AvString newString;
-	avStringReplace(&newString, AV_CSTR("_"), AV_CSTR(" insert "));
 	
-	avStringPrint(newString);
+	avStringReplace(&str, AV_CSTR("_"), AV_CSTR(" insert "));
+	
+	avStringPrint(str);
+
+	avStringFree(&str);
 
 	printf("\n");
 

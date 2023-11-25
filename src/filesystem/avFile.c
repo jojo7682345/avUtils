@@ -216,6 +216,11 @@ void avFileHandleDestroy(AvFile file) {
 		avFileClose(file);
 	}
 	avFree(file->stats);
+	avStringFree(&file->nameProperties.fileNameWithoutExtension);
+	avStringFree(&file->nameProperties.fileExtension);
+	avStringFree(&file->nameProperties.fileName);
+	avStringFree(&file->nameProperties.filePath);
+	avStringFree(&file->nameProperties.fileFullPath);
 	avStringMemoryFree(&file->nameProperties.fileStr);
 	file->status = AV_FILE_STATUS_UNKNOWN;
 	avFree(file);
