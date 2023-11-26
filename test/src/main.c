@@ -248,7 +248,7 @@ void testFile() {
 
 	AvDateTime created = avFileGetAccessedTime(file);
 
-	AvString timeString;
+	AvString timeString = {0};
 	avTimeConvertToString(created, &timeString, AV_DATE_FORMAT_SS_MM_HH_DD_MM_YYYY);
 	printf("file was created at ");
 	avStringPrintLn(timeString);

@@ -42,6 +42,10 @@ void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringM
 	avAssert(memory != 0, "memory must be valid");
 	avAssert(dst != 0, "destination must be a valid reference");
 
+	if(dst->memory){
+		avAssert(dst->memory == nullptr, "destination already has backed memory. This will cause undefined behaviour. If this is not the case, zero out the string first");
+	}
+
 	memset(dst, 0, sizeof(AvString)); // empty the string
 
 	if (offset >= memory->capacity) {
@@ -141,6 +145,10 @@ void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory) {
 	char* prevData = memory->data;
 	uint64 prevCapacity = memory->capacity;
 	memory->data = avReallocate(memory->data, capacity + NULL_TERMINATOR_SIZE, "reallocating string data");
+	if(capacity > prevCapacity){
+		uint64 diffCapacity = capacity - prevCapacity;
+		memset(memory->data + prevCapacity, 0, diffCapacity + NULL_TERMINATOR_SIZE);
+	}
 	memory->capacity = capacity;
 
 	// update references to new data
@@ -357,7 +365,7 @@ uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement)
 	uint64 newLength = remainingLength + count * replacement.len;
 
 	avStringMemoryResize(newLength, str->memory);
-	AvString readStr;
+	AvString readStr = {0};
 	avStringCopy(&readStr, *str);
 
 	uint64 writeIndex = 0;
@@ -367,21 +375,23 @@ uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement)
 	while(countReplaced != count){
 		AvString remainingStr = AV_STR(
 			readStr.chrs + readIndex,
-			readStr.len - readIndex - 1
+			readStr.len - readIndex
 		);
 		strOffset offset = avStringFindFirstOccuranceOf(
 			remainingStr, 
 			sequence
 		);
-		avStringMemoryStore(remainingStr, readIndex, offset, str->memory);
+		avStringMemoryStore(remainingStr, writeIndex, offset, str->memory);
+		readIndex += offset;
 		writeIndex += offset;
 		avStringMemoryStore(replacement, writeIndex, replacement.len, str->memory);
 		readIndex += sequence.len;
+		writeIndex += replacement.len;
 		countReplaced++;
 	}
 	AvString remainingStr = AV_STR(
 		readStr.chrs + readIndex,
-		readStr.len - readIndex - 1
+		readStr.len - readIndex
 	);
 	avStringMemoryStore(remainingStr, readIndex, remainingStr.len, str->memory);
 	avStringFree(&readStr);
