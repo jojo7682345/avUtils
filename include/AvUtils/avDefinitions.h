@@ -10,5 +10,9 @@
 #define C_SYMBOLS_END
 #endif
 
+#define AV_DS(ds, ...) ds
+
+#define AV_NULL_OPTION
+#define AV_EMPTY {0}
 
 #endif//__AV_DEFINITIONS__

@@ -220,6 +220,17 @@ void testString() {
 
 	printf("\n");
 
+
+	AvString splitString = {0};
+	avStringClone(&splitString, AV_CSTR("split string at:other string"));
+	AV_DS(AvArray, AvString) strings = AV_EMPTY;
+
+	
+	avStringSplitOnChar(&strings, ':', splitString);
+
+	avArrayFree(&strings);
+	avStringFree(&splitString);
+
 	avStringDebugContextEnd;
 }
 
@@ -227,7 +238,7 @@ void testFile() {
 
 	avStringDebugContextStart;
 
-	AvString filePath;
+	AvString filePath = AV_EMPTY;
 	avFileBuildPathVAR("README.md", &filePath, AV_ROOT_DIR, "SDK_CCR", "avUtils");
 
 	AvFile file;

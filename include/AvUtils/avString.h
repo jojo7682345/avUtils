@@ -4,8 +4,9 @@
 C_SYMBOLS_START
 
 #include "avTypes.h"
+#include "dataStructures/avArray.h"
 
-#define AV_STRING_FULL_LENGTH 0
+#define AV_STRING_FULL_LENGTH ((uint64)-2)
 #define AV_STRING_NULL ((uint64)-1)
 #define AV_STRING_PRINTF_CODE "%.*s"
 
@@ -40,8 +41,11 @@ typedef AvString* AvStringRef;
 /// @brief create a string from a exisitng const char*
 #define AV_CSTR(str) AV_STR(str, avCStringLength(str)) 
 
-void avStringCopy(AvStringRef dst, AvString src);
+void avStringClone(AvStringRef dst, AvString src);
 void avStringMove(AvStringRef dst, AvStringRef src);
+
+void avStringCopy(AvStringRef dst, AvString src);
+void avStringCopySection(AvStringRef dst, uint64 offset, uint64 length, AvString src);
 
 void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringMemoryRef memory);
 
@@ -69,6 +73,8 @@ void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory);
 /// @param capacity the new capacity
 /// @param memory reference to the string memory
 void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory);
+
+void avStringMemoryResizeSection(uint64 offset, uint64 length, AvStringMemoryRef memory);
 
 /// @brief frees the data allocated for the string memory
 /// @param memory reference to the string memory
@@ -113,6 +119,9 @@ void avStringMemoryStoreCharArrays(AvStringMemoryRef result, uint32 count, const
 void avStringPrint(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
+
+uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, AvString str);
+
 
 C_SYMBOLS_END
 #endif//__AV_STRING__
