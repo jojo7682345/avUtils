@@ -1,4 +1,4 @@
-#include <AvUtils/filesystem/AvDirectory.h>
+#include <AvUtils/filesystem/avDirectory.h>
 #include <AvUtils/avMemory.h>
 #include <AvUtils/dataStructures/avDynamicArray.h>
 #include <AvUtils/dataStructures/avArray.h>
@@ -184,6 +184,8 @@ static void listFiles(AvString directoryPath, AvDirectory parent) {
 }
 
 #else
-static AvArray listFiles(AvPath path);
+static void listFiles(AvString path, AvDirectory dir){
+
+}
 
 #endif

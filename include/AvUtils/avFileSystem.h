@@ -3,8 +3,8 @@
 #include "avDefinitions.h"
 C_SYMBOLS_START
 
-#include "filesystem/AvFile.h"
-#include "filesystem/AvDirectory.h"
+#include "filesystem/avFile.h"
+#include "filesystem/avDirectory.h"
 
 C_SYMBOLS_END
 #endif//__AV_FILE_SYSTEM__

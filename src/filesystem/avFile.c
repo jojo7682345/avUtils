@@ -1,4 +1,4 @@
-#include <AvUtils/filesystem/AvFile.h>
+#include <AvUtils/filesystem/avFile.h>
 #include <AvUtils/avMemory.h>
 
 #define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT

@@ -194,7 +194,7 @@ uint joinThread(AvThread thread) {
 }
 
 void sleepThread(uint64 milis) {
-	usleep(micros*1000U);
+	usleep(milis*1000U);
 }
 
 #endif

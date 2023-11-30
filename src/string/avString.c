@@ -110,7 +110,7 @@ static uint32 stringMemoryFindReference(AvStringRef ref, AvStringMemoryRef memor
 			return i;
 		}
 	}
-	return AV_STRING_NULL;
+	return (uint32)AV_STRING_NULL;
 }
 
 void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringMemoryRef memory) {
