@@ -3,6 +3,7 @@
 #include <AvUtils/avMath.h>
 #define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 #include <AvUtils/dataStructures/avDynamicArray.h>
+#include <AvUtils/string/avChar.h>
 #include <AvUtils/avLogging.h>
 
 #include <string.h>
@@ -66,7 +67,11 @@ void avStringMove(AvStringRef dst, AvStringRef src) {
 	avAssert(dst != nullptr, "destination must be a valid reference");
 	avAssert(src != nullptr, "source must be a valid reference");
 
-	avStringClone(dst, *src);
+	if (dst->memory == nullptr) {
+		avStringClone(dst, *src);
+	} else {
+		avStringMemoryStore(*src, dst->chrs - dst->memory->data, dst->len, dst->memory);
+	}
 	avStringFree(src);
 }
 
@@ -168,6 +173,8 @@ void avStringFree(AvStringRef str) {
 
 	uint32 refIndex = stringMemoryFindReference(str, memory);
 	stringMemoryRemoveReference(refIndex, memory);
+
+	memset(str, 0, sizeof(AvString));
 }
 
 void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory) {
@@ -293,6 +300,12 @@ void avStringMemoryStore(AvString str, uint64 offset, uint64 length, AvStringMem
 	memcpy(memory->data + offset, str.chrs, length);
 }
 
+void avStringMemoryAllocStore(AvString str, AvStringMemoryRef memory) {
+	avAssert(memory != nullptr, "memory must be a valid reference");
+	avStringMemoryAllocate(str.len, memory);
+	avStringMemoryStore(str, 0, AV_STRING_FULL_LENGTH, memory);
+}
+
 void avStringDebugContextStart_() {
 
 	StringDebugContext context = avCallocate(1, sizeof(StringDebugContext_T), "allocating string debug context");
@@ -405,6 +418,105 @@ uint64 avStringFindCount(AvString str, AvString find) {
 	return count;
 }
 
+bool32 avStringEndsWith(AvString str, AvString sequence){
+	strOffset offset = avStringFindLastOccuranceOf(str, sequence);
+	if(offset == AV_STRING_NULL){
+		return false;
+	}
+	return offset + sequence.len == str.len;
+}
+
+bool32 avStringStartsWith(AvString str, AvString sequence){
+	return avStringFindFirstOccuranceOf(str, sequence)==0;
+}
+
+bool32 avStringEndsWithChar(AvString str, char chr){
+	if(str.len == 0 || str.chrs == nullptr){
+		return false;
+	}
+	return str.chrs[str.len-1] == chr;
+}
+
+bool32 avStringStartsWithChar(AvString str, char chr){
+	if(str.len == 0 || str.chrs == nullptr){
+		return false;
+	}
+	return str.chrs[0] == chr;
+}
+
+bool32 avStringWrite(AvStringRef str, strOffset offset, char chr){
+	avAssert(str!=nullptr, "string must be a valid reference");
+	if(offset >= str->len){
+		return false;
+	}
+	if(str->memory == nullptr){
+		avStringClone(str, *str);
+	}
+	str->memory->data[offset] = chr;
+
+}
+char avStringRead(AvString str, strOffset offset){
+	if(str.len == 0){
+		return '\0';
+	}
+	avAssert(str.chrs != nullptr, "string is malformed");
+	if(offset >= str.len){
+		return '\0';
+	}
+	return str.chrs[offset];
+}
+
+
+void avStringToUppercase(AvStringRef str){
+	avAssert(str != nullptr, "string must be a valid reference");
+	if(str->memory == nullptr){
+		avStringClone(str, *str);
+	}
+	uint64 offset = str->chrs - str->memory->data;
+	for(uint i = offset; i < AV_MIN(str->len + offset, str->memory->capacity); i++){
+		str->memory->data[i] = avCharToUppercase(str->memory->data[i]);
+	}
+}
+void avStringToLowercase(AvStringRef str){
+	avAssert(str != nullptr, "string must be a valid reference");
+	if (str->memory == nullptr) {
+		avStringClone(str, *str);
+	}
+	uint64 offset = str->chrs - str->memory->data;
+	for (uint i = offset; i < AV_MIN(str->len + offset, str->memory->capacity); i++) {
+		str->memory->data[i] = avCharToLowercase(str->memory->data[i]);
+	}
+}
+
+bool32 avStringEquals(AvString strA, AvString strB) {
+	if(strA.len != strB.len){
+		return false;
+	}
+	for(uint64 i = 0; i < strA.len; i++){
+		if(strA.chrs[i] != strB.chrs[i]){
+			return false;
+		}
+	}
+	return true;
+}
+
+int32 avStringCompare(AvString strA, AvString strB){
+
+	for(uint64 i = 0; i < AV_MIN(strA.len, strB.len); i++){
+		if(strA.chrs[i] == strB.chrs[i]){
+			continue;
+		}
+		return (strA.chrs[i] < strB.chrs[i]) ? -1 : 1;
+	}
+
+	if(strA.len == strB.len){
+		return 0;
+	}
+
+	return strA.len < strB.len ? 0 : 1;
+	
+}
+
 void avStringReplaceChar(AvStringRef str, char original, char replacement) {
 	if (str->memory == nullptr) {
 		avStringClone(str, *str);
@@ -473,9 +585,20 @@ void avStringJoin(AvStringRef dst, AvString strA, AvString strB) {
 	avAssert(dst != nullptr, "destination must be a valid reference");
 
 	uint64 len = strA.len + strB.len;
-	avStringMemoryHeapAllocate(len, (AvStringMemoryRef*)&dst->memory);
-	avStringMemoryStore(strA, 0, AV_STRING_FULL_LENGTH, dst->memory);
-	avStringMemoryStore(strB, strA.len, AV_STRING_FULL_LENGTH, dst->memory);
+	AvStringHeapMemory memory;
+	avStringMemoryHeapAllocate(len, &memory);
+	avStringMemoryStore(strA, 0, AV_STRING_FULL_LENGTH, memory);
+	avStringMemoryStore(strB, strA.len, AV_STRING_FULL_LENGTH, memory);
+	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
+}
+
+void avStringAppend(AvStringRef dst, AvString src) {
+	avAssert(dst != nullptr, "destination must be a valid reference");
+	if (dst->memory == nullptr) {
+		avStringMemoryAllocStore(src, dst->memory);
+		avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, dst->memory);
+	}
+
 }
 
 void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef memory, ...) {

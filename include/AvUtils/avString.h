@@ -9,6 +9,7 @@ C_SYMBOLS_START
 #define AV_STRING_FULL_LENGTH ((uint64)-2)
 #define AV_STRING_NULL ((uint64)-1)
 #define AV_STRING_PRINTF_CODE "%.*s"
+#define AV_STRING_WHOLE_MEMORY 0, AV_STRING_FULL_LENGTH
 
 typedef struct AvStringMemoryProperties {
 	bool8 heapAllocated;
@@ -68,7 +69,6 @@ void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory);
 /// @param memory reference to the string memory
 void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory);
 
-
 /// @brief resizes the string memory
 /// @param capacity the new capacity
 /// @param memory reference to the string memory
@@ -86,6 +86,8 @@ void avStringMemoryFree(AvStringMemoryRef memory);
 /// @param length the length stored in the memory
 /// @param memory reference to the string memory
 void avStringMemoryStore(AvString str, uint64 offset, uint64 length, AvStringMemoryRef memory);
+
+void avStringMemoryAllocStore(AvString str, AvStringMemoryRef memory);
 
 #ifndef NDEBUG
 #define avStringDebugContextStart avStringDebugContextStart_();
@@ -106,11 +108,27 @@ strOffset avStringFindLastOccuranceOf(AvString str, AvString find);
 strOffset avStringFindFirstOccuranceOf(AvString str, AvString find);
 uint64 avStringFindCount(AvString str, AvString find);
 
+bool32 avStringEndsWith(AvString str, AvString sequence);
+bool32 avStringStartsWith(AvString str, AvString sequence);
+
+bool32 avStringEndsWithChar(AvString str, char chr);
+bool32 avStringStartsWithChar(AvString str, char chr);
+
+bool32 avStringWrite(AvStringRef str, strOffset offset, char chr);
+char avStringRead(AvString str, strOffset offset);
+
+void avStringToUppercase(AvStringRef str);
+void avStringToLowercase(AvStringRef str);
+
+bool32 avStringEquals(AvString strA, AvString strB);
+int32 avStringCompare(AvString strA, AvString strB);
 
 void avStringReplaceChar(AvStringRef str, char original, char replacement);
 uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement);
 
 void avStringJoin(AvStringRef dst, AvString strA, AvString strB);
+
+void avStringAppend(AvStringRef dst, AvString src);
 
 #define avStringMemoryStoreCharArraysVA(result, ...) avStringMemoryStoreCharArraysVA_(result, __VA_ARGS__, NULL);
 void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef result, ...);

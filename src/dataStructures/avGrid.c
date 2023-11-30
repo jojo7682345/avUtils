@@ -89,3 +89,16 @@ void aGridDestroy(AvGrid grid) {
 	avFree(grid->data);
 	avFree(grid);
 }
+
+
+uint32 avGridGetWidth(AvGrid grid){
+	return grid->width;
+}
+
+uint32 avGridGetHeight(AvGrid grid){
+	return grid->height;
+}
+
+uint64 avGridGetElementSize(AvGrid grid){
+	return grid->elementSize;
+}

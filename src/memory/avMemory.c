@@ -29,7 +29,7 @@ void* avCallocate_(uint64 count, uint64 size, const char* message, uint line, co
 
 void* avReallocate_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file) {
 	if(size==0){
-		avFree(data);
+		avFree_(data, line, func, file);
 		return NULL;
 	}
 	void* newPtr = realloc(data, size);

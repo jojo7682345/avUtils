@@ -54,7 +54,7 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
 
 void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
 
-
+#define avDynamicArrayForEachElement(type, dynamicArray, code) for(uint32 index = 0; index < dynamicArray->count; index++) { type element; avDynamicArrayRead(&element, index, (dynamicArray)); code }
 
 #endif//__AV_DYNAMIC_ARRAY__
 

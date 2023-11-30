@@ -4,8 +4,10 @@
 #include <AvUtils/avDataStructures.h>
 #include <AvUtils/avLogging.h>
 #include <AvUtils/avString.h>
+#include <AvUtils/string/avPath.h>
 #include <AvUtils/avFileSystem.h>
 #include <AvUtils/avProcess.h>
+
 
 #include <stdio.h>
 
@@ -93,7 +95,7 @@ uint32 mutexFunc(void* data, uint64 dataSize) {
 	AvMutex mutex = (AvMutex)data;
 
 	avThreadSleep(10);
-	
+
 	avMutexLock(mutex);
 	printf("threadB\n");
 	avMutexUnlock(mutex);
@@ -175,7 +177,7 @@ void testDynamicArray() {
 	uint32 memCount = avDynamicArrayGetPageCount(arr);
 	for (uint i = 0; i < memCount; i++) {
 		printf("|");
-		uint32 size = avDynamicArrayGetPageSize(i,arr);
+		uint32 size = avDynamicArrayGetPageSize(i, arr);
 		uint32 capacity = avDynamicArrayGetPageCapacity(i, arr);
 		for (uint j = 0; j < capacity; j++) {
 			if (j < size) {
@@ -189,7 +191,7 @@ void testDynamicArray() {
 
 	uint32* buffer = avCallocate(avDynamicArrayGetSize(arr), sizeof(uint32), "");
 	avDynamicArrayReadRange(buffer, avDynamicArrayGetSize(arr), 0, sizeof(uint32), 0, arr);
-	for(uint i = 0; i < avDynamicArrayGetSize(arr); i++){
+	for (uint i = 0; i < avDynamicArrayGetSize(arr); i++) {
 		printf("%u\n", buffer[i]);
 	}
 
@@ -198,7 +200,7 @@ void testDynamicArray() {
 
 
 void testString() {
-	
+
 	avStringDebugContextStart;
 
 	AvString str = AV_CSTR("test string_ ");
@@ -211,9 +213,9 @@ void testString() {
 	avStringPrint(str);
 	printf("\n");
 
-	
+
 	avStringReplace(&str, AV_CSTR("_"), AV_CSTR(" insert "));
-	
+
 	avStringPrint(str);
 
 	avStringFree(&str);
@@ -221,15 +223,40 @@ void testString() {
 	printf("\n");
 
 
-	AvString splitString = {0};
-	avStringClone(&splitString, AV_CSTR("split string at:other string"));
+	AvString splitString = { 0 };
+	avStringClone(&splitString, AV_CSTR(":split string at:other string"));
 	AV_DS(AvArray, AvString) strings = AV_EMPTY;
 
-	
 	avStringSplitOnChar(&strings, ':', splitString);
+	avStringFree(&splitString);
+
+	avArrayForEachElement(AvString, element, i, &strings,
+		avStringPrintln(element);
+	);
 
 	avArrayFree(&strings);
-	avStringFree(&splitString);
+
+
+	avStringDebugContextEnd;
+}
+
+void testPath(){
+	avStringDebugContextStart;
+
+	AvPath path = AV_EMPTY;
+	avPathCreate(AV_CSTR("C:/test/../test"), &path);
+	AvString str = AV_EMPTY; 
+	avPathGetStr(&str, path);
+	avStringPrintLn(str);
+	avPathResolve(path);
+	avPathMakeAbsolute(path);
+	avStringFree(&str);
+	avPathGetStr(&str, path);
+	avStringPrintln(str);
+	avStringFree(&str);
+
+	avPathDestroy(path);
+
 
 	avStringDebugContextEnd;
 }
@@ -251,15 +278,15 @@ void testFile() {
 	avStringPrintln(nameProperties->fileExtension);
 	avStringPrintln(nameProperties->fileNameWithoutExtension);
 
-	if(!avFileExists(file)){
+	if (!avFileExists(file)) {
 		printf("file %s does not exits\n", nameProperties->fileFullPath.chrs);
-	}else{
+	} else {
 		printf("file %s exists\n", nameProperties->fileFullPath.chrs);
 	}
 
 	AvDateTime created = avFileGetAccessedTime(file);
 
-	AvString timeString = {0};
+	AvString timeString = { 0 };
 	avTimeConvertToString(created, &timeString, AV_DATE_FORMAT_SS_MM_HH_DD_MM_YYYY);
 	printf("file was created at ");
 	avStringPrintLn(timeString);
@@ -268,9 +295,9 @@ void testFile() {
 	uint64 size = avFileGetSize(file);
 	printf("file size : %lu\n", size);
 
-	avFileOpen(file,(AvFileOpenOptions){.openMode=AV_FILE_OPEN_READ,.binary=false,.update=false});
+	avFileOpen(file, (AvFileOpenOptions) { .openMode = AV_FILE_OPEN_READ, .binary = false, .update = false });
 
-	char* buffer = avCallocate(1,size+1,"read buffer allocation");
+	char* buffer = avCallocate(1, size + 1, "read buffer allocation");
 	buffer[size] = '\0';
 
 	avFileRead(buffer, size, file);
@@ -285,7 +312,7 @@ void testFile() {
 	avStringDebugContextEnd;
 }
 
-void testDirectory(){
+void testDirectory() {
 
 
 	AvDirectoryTree tree;
@@ -293,14 +320,14 @@ void testDirectory(){
 
 	AvDirectoryEntry dir = avDirectoryTreeGetRootDir(tree);
 	avDirectoryExplore(dir);
-	
+
 	uint32 contentCount = avDirectoryGetContentCount(dir);
 	printf("the folder contains %i entries", contentCount);
 
 	AvDirectoryEntry* dirs = avCallocate(contentCount, sizeof(AvDirectoryEntry), "");
 	avDirectoryGetContents(dirs, dir);
 
-	for(uint i = 0; i < contentCount; i++){
+	for (uint i = 0; i < contentCount; i++) {
 		AvDirectoryEntry entry = dirs[i];
 		avStringPrintln(entry->path);
 	}
@@ -308,15 +335,18 @@ void testDirectory(){
 	avDirectoryTreeDestroy(tree);
 }
 
-void testProcess(){
+void testProcess() {
 	AvProcess gcc;
-	avProcessCreate("gcc", NULL, NULL, &gcc);
+	avProcessCreate("echo", NULL, NULL, &gcc);
 
-	if(!avProcessStart(0, NULL, gcc)){
+	const char* arg[] = {
+		"test"
+	};
+	if (!avProcessStart(sizeof(arg)/sizeof(char*), arg, gcc)) {
 		printf("failed to start gcc\n");
 	}
 	uint32 retCode = 0;
-	if(!avProcessWaitForTermination(&retCode, gcc)){
+	if (!avProcessWaitForTermination(&retCode, gcc)) {
 		printf("failed to return from gcc\n");
 	}
 
@@ -333,6 +363,7 @@ int main() {
 	testThread();
 	testMutex();
 	testString();
+	testPath();
 	testFile();
 	testDirectory();
 	//testProcess();

@@ -92,6 +92,7 @@ static void resizePage(Page* page, uint32 capacity, AvDynamicArray dynamicArray)
 
 	if (capacity == 0) {
 		removePage(page, dynamicArray);
+		return;
 	}
 
 	int64 capacityDiff = (int64)page->capacity - (int64)capacity;

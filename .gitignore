@@ -16,6 +16,7 @@ lib/
 tmp/
 builder*
 builder.exe
+avBuild.*
 .vs/*
 .vscode/*
 !build/builder.c

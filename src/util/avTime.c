@@ -46,3 +46,38 @@ void avTimeConvertToString(AvDateTime time, AvStringRef result, AvDateFormat for
     avStringFromMemory(result, 0, AV_MIN(avCStringLength(str->data), formats[format].size), str);
 
 }
+
+bool32 avTimeIsEqual(AvDateTime time, AvDateTime compare){
+    return memcmp(&time, &compare, sizeof(AvDateTime))==0;
+}
+
+bool32 avTimeIsBefore(AvDateTime time, AvDateTime compare){
+    if(avTimeIsEqual(time, compare)){
+        return false;
+    }
+    if(time.year < compare.year){
+        return true;
+    }
+    if(time.month < compare.month){
+        return true;
+    }
+    if(time.day < compare.day){
+        return true;
+    }
+    if(time.hour < compare.hour){
+        return true;
+    }
+    if(time.minute < compare.minute){
+        return true;
+    }
+    if(time.second < compare.second){
+        return true;
+    }
+    return false;
+}
+bool32 avTimeIsAfter(AvDateTime time, AvDateTime compare){
+    if(avTimeIsEqual(time, compare)){
+        return false;
+    }
+    return !avTimeIsBefore(time, compare);
+}

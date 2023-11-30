@@ -27,6 +27,10 @@ bool32 avArrayWrite(void* data, uint32 index, AvArrayRef array);
 bool32 avArrayRead(void* data, uint32 index, AvArrayRef array);
 void* avArrayGetPtr(uint32 index, AvArrayRef array);
 
+#define avArrayForEachElement(type, element, index, array, code) for(uint32 index = 0; index < (array)->count; index++) { type element; avArrayRead(&element, index, (array));\
+ code\
+}
+
 void avArrayFreeAndDeallocate(AvArrayRef array, AvDeallocateElementCallback deallocElement);
 void avArrayFreeAndDestroy(AvArrayRef array, AvDestroyElementCallback destroyElement);
 void avArrayFree(AvArrayRef array);

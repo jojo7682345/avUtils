@@ -1,5 +1,7 @@
 #ifndef __AV_TIME__
 #define __AV_TIME__
+#include "../avDefinitions.h"
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -28,4 +30,9 @@ typedef enum AvDateFormat {
 
 void avTimeConvertToString(AvDateTime time, AvStringRef dst, AvDateFormat format);
 
+bool32 avTimeIsEqual(AvDateTime time, AvDateTime compare);
+bool32 avTimeIsBefore(AvDateTime time, AvDateTime compare);
+bool32 avTimeIsAfter(AvDateTime time, AvDateTime compare);
+
+C_SYMBOLS_END
 #endif//__AV_TIME__

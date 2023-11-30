@@ -56,5 +56,9 @@ void* avGridGetPtr(uint32 x, uint32 y, AvGrid grid);
 /// <param name="grid"></param>
 void aGridDestroy(AvGrid grid);
 
+uint32 avGridGetWidth(AvGrid grid);
+uint32 avGridGetHeight(AvGrid grid);
+uint64 avGridGetElementSize(AvGrid grid);
+
 C_SYMBOLS_END
 #endif//__AV_GRID__
