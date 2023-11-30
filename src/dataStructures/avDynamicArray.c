@@ -289,6 +289,13 @@ uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 
 	if (count == 0) {
 		return 0;
 	}
+	if (count == AV_DYNAMIC_ARRAY_ELEMENT_COUNT) {
+		count = dynamicArray->count;
+	}
+	if (stride == AV_DYNAMIC_ARRAY_ELEMENT_SIZE) {
+		stride = dynamicArray->dataSize;
+	}
+
 	byte* dataPtr = (byte*)data + offset;
 	for (uint i = 0; i < count; i++) {
 		if (!avDynamicArrayWrite(dataPtr, startIndex + i, dynamicArray)) {
@@ -302,6 +309,12 @@ uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 
 uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
 	if (count == 0) {
 		return 0;
+	}
+	if(count == AV_DYNAMIC_ARRAY_ELEMENT_COUNT){
+		count = dynamicArray->count;
+	}
+	if(stride == AV_DYNAMIC_ARRAY_ELEMENT_SIZE){
+		stride = dynamicArray->dataSize;
 	}
 
 	byte* dataPtr = (byte*)data + offset;

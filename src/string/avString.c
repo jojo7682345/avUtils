@@ -248,7 +248,6 @@ void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory) {
 
 void avStringMemoryResizeSection(uint64 offset, uint64 length, AvStringMemoryRef memory) {
 	avAssert(memory != nullptr, "invalid memory reference");
-	avAssert(offset < memory->capacity, "offset must fall within the memory");
 
 	uint64 newSize = AV_MAX(offset + length, memory->capacity);
 	avStringMemoryResize(newSize, memory);
@@ -418,66 +417,66 @@ uint64 avStringFindCount(AvString str, AvString find) {
 	return count;
 }
 
-bool32 avStringEndsWith(AvString str, AvString sequence){
+bool32 avStringEndsWith(AvString str, AvString sequence) {
 	strOffset offset = avStringFindLastOccuranceOf(str, sequence);
-	if(offset == AV_STRING_NULL){
+	if (offset == AV_STRING_NULL) {
 		return false;
 	}
 	return offset + sequence.len == str.len;
 }
 
-bool32 avStringStartsWith(AvString str, AvString sequence){
-	return avStringFindFirstOccuranceOf(str, sequence)==0;
+bool32 avStringStartsWith(AvString str, AvString sequence) {
+	return avStringFindFirstOccuranceOf(str, sequence) == 0;
 }
 
-bool32 avStringEndsWithChar(AvString str, char chr){
-	if(str.len == 0 || str.chrs == nullptr){
+bool32 avStringEndsWithChar(AvString str, char chr) {
+	if (str.len == 0 || str.chrs == nullptr) {
 		return false;
 	}
-	return str.chrs[str.len-1] == chr;
+	return str.chrs[str.len - 1] == chr;
 }
 
-bool32 avStringStartsWithChar(AvString str, char chr){
-	if(str.len == 0 || str.chrs == nullptr){
+bool32 avStringStartsWithChar(AvString str, char chr) {
+	if (str.len == 0 || str.chrs == nullptr) {
 		return false;
 	}
 	return str.chrs[0] == chr;
 }
 
-bool32 avStringWrite(AvStringRef str, strOffset offset, char chr){
-	avAssert(str!=nullptr, "string must be a valid reference");
-	if(offset >= str->len){
+bool32 avStringWrite(AvStringRef str, strOffset offset, char chr) {
+	avAssert(str != nullptr, "string must be a valid reference");
+	if (offset >= str->len) {
 		return false;
 	}
-	if(str->memory == nullptr){
+	if (str->memory == nullptr) {
 		avStringClone(str, *str);
 	}
 	str->memory->data[offset] = chr;
 
 }
-char avStringRead(AvString str, strOffset offset){
-	if(str.len == 0){
+char avStringRead(AvString str, strOffset offset) {
+	if (str.len == 0) {
 		return '\0';
 	}
 	avAssert(str.chrs != nullptr, "string is malformed");
-	if(offset >= str.len){
+	if (offset >= str.len) {
 		return '\0';
 	}
 	return str.chrs[offset];
 }
 
 
-void avStringToUppercase(AvStringRef str){
+void avStringToUppercase(AvStringRef str) {
 	avAssert(str != nullptr, "string must be a valid reference");
-	if(str->memory == nullptr){
+	if (str->memory == nullptr) {
 		avStringClone(str, *str);
 	}
 	uint64 offset = str->chrs - str->memory->data;
-	for(uint i = offset; i < AV_MIN(str->len + offset, str->memory->capacity); i++){
+	for (uint i = offset; i < AV_MIN(str->len + offset, str->memory->capacity); i++) {
 		str->memory->data[i] = avCharToUppercase(str->memory->data[i]);
 	}
 }
-void avStringToLowercase(AvStringRef str){
+void avStringToLowercase(AvStringRef str) {
 	avAssert(str != nullptr, "string must be a valid reference");
 	if (str->memory == nullptr) {
 		avStringClone(str, *str);
@@ -489,32 +488,32 @@ void avStringToLowercase(AvStringRef str){
 }
 
 bool32 avStringEquals(AvString strA, AvString strB) {
-	if(strA.len != strB.len){
+	if (strA.len != strB.len) {
 		return false;
 	}
-	for(uint64 i = 0; i < strA.len; i++){
-		if(strA.chrs[i] != strB.chrs[i]){
+	for (uint64 i = 0; i < strA.len; i++) {
+		if (strA.chrs[i] != strB.chrs[i]) {
 			return false;
 		}
 	}
 	return true;
 }
 
-int32 avStringCompare(AvString strA, AvString strB){
+int32 avStringCompare(AvString strA, AvString strB) {
 
-	for(uint64 i = 0; i < AV_MIN(strA.len, strB.len); i++){
-		if(strA.chrs[i] == strB.chrs[i]){
+	for (uint64 i = 0; i < AV_MIN(strA.len, strB.len); i++) {
+		if (strA.chrs[i] == strB.chrs[i]) {
 			continue;
 		}
 		return (strA.chrs[i] < strB.chrs[i]) ? -1 : 1;
 	}
 
-	if(strA.len == strB.len){
+	if (strA.len == strB.len) {
 		return 0;
 	}
 
 	return strA.len < strB.len ? 0 : 1;
-	
+
 }
 
 void avStringReplaceChar(AvStringRef str, char original, char replacement) {
@@ -581,14 +580,33 @@ uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement)
 	return count;
 }
 
-void avStringJoin(AvStringRef dst, AvString strA, AvString strB) {
+void avStringJoin_(AvStringRef dst, ...) {
+	va_list strs;
+	va_start(strs, dst);
+	AvDynamicArray arr;
+	avDynamicArrayCreate(0, sizeof(AvString), &arr);
+	uint64 length = 0;
+	while(true){
+		AvString str = va_arg(strs, AvString);
+		if(str.len == AV_STRING_NULL){
+			break;
+		}
+		length += str.len;
+		avDynamicArrayAdd(&str, arr);
+	}
+
 	avAssert(dst != nullptr, "destination must be a valid reference");
 
-	uint64 len = strA.len + strB.len;
 	AvStringHeapMemory memory;
-	avStringMemoryHeapAllocate(len, &memory);
-	avStringMemoryStore(strA, 0, AV_STRING_FULL_LENGTH, memory);
-	avStringMemoryStore(strB, strA.len, AV_STRING_FULL_LENGTH, memory);
+	avStringMemoryHeapAllocate(length, &memory);
+
+	uint64 writeIndex = 0;
+	avDynamicArrayForEachElement(AvString, arr, {
+		avStringMemoryStore(element, writeIndex, element.len, memory);
+		writeIndex += element.len;
+	});
+	avDynamicArrayDestroy(arr);
+
 	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
 }
 
@@ -597,7 +615,21 @@ void avStringAppend(AvStringRef dst, AvString src) {
 	if (dst->memory == nullptr) {
 		avStringMemoryAllocStore(src, dst->memory);
 		avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, dst->memory);
+		return;
 	}
+	AvStringMemoryRef memory = dst->memory;
+	if ((dst->chrs - dst->memory->data) + dst->len < dst->memory->capacity) {
+		avStringMemoryHeapAllocate(dst->len + src.len, &memory);
+		avStringMemoryStore(*dst, 0, dst->len, memory);
+		avStringMemoryStore(src, dst->len, src.len, memory);
+		avFree(dst);
+		avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
+	} else {
+		avStringMemoryResizeSection(dst->len, src.len, memory);
+		avStringMemoryStore(src, dst->len, src.len, memory);
+		avStringResize(dst, dst->len + src.len);
+	}
+	
 
 }
 
@@ -656,7 +688,7 @@ uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString) substrings, char split, A
 	avAssert(str.chrs != nullptr, "split must be a valid string");
 
 	uint splitCount = split == '\0' ? str.len : avStringFindCharCount(str, split);
-	avArrayAllocateWithFreeCallback(splitCount + 1, sizeof(AvString), substrings, true, nullptr, (AvDestroyElementCallback)&avStringFree);
+	avArrayAllocateWithFreeCallback(splitCount + 1, sizeof(AvString), substrings, false, nullptr, (AvDestroyElementCallback)&avStringFree);
 	if (splitCount == 0) {
 		AvString tmpStr = { 0 };
 		avStringCopy(avArrayGetPtr(0, substrings), str);

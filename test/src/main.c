@@ -245,15 +245,31 @@ void testPath(){
 
 	AvPath path = AV_EMPTY;
 	avPathCreate(AV_CSTR("C:/test/../test"), &path);
+
 	AvString str = AV_EMPTY; 
 	avPathGetStr(&str, path);
 	avStringPrintLn(str);
-	avPathResolve(path);
-	avPathMakeAbsolute(path);
 	avStringFree(&str);
+
+	avPathSimplify(path);
+	avPathMakeAbsolute(path);
+
 	avPathGetStr(&str, path);
 	avStringPrintln(str);
 	avStringFree(&str);
+
+	avPathChangeDirectory(AV_CSTR("../SDK"), path);
+
+	avPathGetStr(&str, path);
+	avStringPrintln(str);
+	avStringFree(&str);
+
+	avPathSimplify(path);
+	
+	avPathGetStr(&str, path);
+	avStringPrintln(str);
+	avStringFree(&str);
+
 
 	avPathDestroy(path);
 
@@ -313,26 +329,16 @@ void testFile() {
 }
 
 void testDirectory() {
+	AvDirectory dir;
+	AvPath path = AV_EMPTY;
+	avPathCreate(AV_CSTR("/SDK_CCR/avUtils"), &path);
+	avDirectoryOpen(path, &dir);
 
+	uint32 count = avDirectoryGetContentCount(dir);
+	printf("directory contains %u file(s)\n", count);
 
-	AvDirectoryTree tree;
-	avDirectoryTreeCreate(AV_CSTR("/SDK_CCR/avUtils"), &tree);
-
-	AvDirectoryEntry dir = avDirectoryTreeGetRootDir(tree);
-	avDirectoryExplore(dir);
-
-	uint32 contentCount = avDirectoryGetContentCount(dir);
-	printf("the folder contains %i entries", contentCount);
-
-	AvDirectoryEntry* dirs = avCallocate(contentCount, sizeof(AvDirectoryEntry), "");
-	avDirectoryGetContents(dirs, dir);
-
-	for (uint i = 0; i < contentCount; i++) {
-		AvDirectoryEntry entry = dirs[i];
-		avStringPrintln(entry->path);
-	}
-
-	avDirectoryTreeDestroy(tree);
+	avDirectoryClose(&dir);
+	avPathDestroy(path);	
 }
 
 void testProcess() {
@@ -357,6 +363,7 @@ void testProcess() {
 }
 
 int main() {
+	avStringDebugContextStart;
 
 	testDynamicArray();
 	testQueue();
@@ -366,7 +373,10 @@ int main() {
 	testPath();
 	testFile();
 	testDirectory();
+
 	//testProcess();
+	printf("test completed\n");
+	avStringDebugContextEnd;
 	return 0;
 
 }

@@ -6,6 +6,10 @@ C_SYMBOLS_START
 
 #include "../avTypes.h"
 
+#define AV_DYNAMIC_ARRAY_ELEMENT_SIZE ((uint64)-1)
+#define AV_DYNAMIC_ARRAY_ELEMENT_COUNT ((uint64)-1)
+#define AV_DYNAMIC_ARRAY_FULL_RANGE AV_DYNAMIC_ARRAY_ELEMENT_COUNT, 0, AV_DYNAMIC_ARRAY_ELEMENT_SIZE, 0
+
 typedef struct AvDynamicArray_T* AvDynamicArray;
 
 #define AV_DYNAMIC_ARRAY_DEFAULT_GROW_SIZE 8
@@ -54,7 +58,7 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
 
 void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
 
-#define avDynamicArrayForEachElement(type, dynamicArray, code) for(uint32 index = 0; index < dynamicArray->count; index++) { type element; avDynamicArrayRead(&element, index, (dynamicArray)); code }
+#define avDynamicArrayForEachElement(type, dynamicArray, code) for(uint32 index = 0; index < avDynamicArrayGetSize(dynamicArray); index++) { type element; avDynamicArrayRead(&element, index, (dynamicArray)); code }
 
 #endif//__AV_DYNAMIC_ARRAY__
 

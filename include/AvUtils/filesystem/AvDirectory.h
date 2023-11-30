@@ -3,51 +3,39 @@
 #include "../avDefinitions.h"
 C_SYMBOLS_START
 
+#include "../string/avPath.h"
 #include "../avTypes.h"
 #include "../avString.h"
-#include "../avDataStructures.h"
 #include "avFile.h"
 
+typedef enum AvDirectoryContentType {
+	AV_DIRECTORY_CONTENT_TYPE_INVALID,
+	AV_DIRECTORY_CONTENT_TYPE_DIRECTORY,
+	AV_DIRECTORY_CONTENT_TYPE_FILE,
+} AvDirectoryContentType;
 
-typedef enum AvDirectoryEntryType{
-	AV_DIRECTORY_ENTRY_TYPE_FILE,
-	AV_DIRECTORY_ENTRY_TYPE_DIRECTORY,
-}AvDirectoryEntryType;
-
-typedef struct AvDirectoryTree_T* AvDirectoryTree;
-typedef struct AvDirectoryEntry_T* AvDirectoryEntry;
-typedef struct AvDirectoryEntry_T {
-	AvDirectoryEntryType type;
-	AvDirectoryTree tree;
-	AvString path;
+typedef struct AvDirectory_T* AvDirectory;
+typedef struct AvDirectoryContent {
+	AvDirectoryContentType type;
 	union {
-		struct directory{
-			bool32 explored;
-			AV_DS(AvDynamicArray, AvDirectoryEntry) contents;
-		} directory;
-		struct file {
-			AvFile fileHandle;
-		} file;
+		AvFile file;
+		AvDirectory directory;
 	};
-} AvDirectoryEntry_T;
+} AvDirectoryContent;
+ 
 
+bool32 avDirectoryOpen(AvPath path, AvDirectory* dir);
 
+uint32 avDirectoryGetContentCount(AvDirectory dir);
+AvDirectoryContentType avDirectoryGetContentType(uint32 index, AvDirectory dir);
+AvFile avDirectoryOpenFile(uint32 index, AvDirectory dir);
+AvDirectory avDirectoryOpenSubfolder(uint32 index, AvDirectory dir);
 
-bool32 avDirectoryTreeCreate(AvString rootDir, AvDirectoryTree* tree);
+uint32 avDirectoryRefresh(AvDirectory dir);
 
-AvDirectoryEntry avDirectoryTreeGetRootDir(AvDirectoryTree tree);
+void avDirectoryGetPathStr(AvStringRef str, AvDirectory dir);
 
-void avDirectoryExplore(AvDirectoryEntry dir);
-
-#define AV_DIRECTORY_UNEXPLORED ((uint32)-1)
-
-uint32 avDirectoryGetContentCount(AvDirectoryEntry dir);
-void avDirectoryGetContents(AvDirectoryEntry* contents, AvDirectoryEntry dir);
-
-void avDirectoryTreeDestroy(AvDirectoryTree tree);
-
-
-
+void avDirectoryClose(AvDirectory* dir);
 
 C_SYMBOLS_END
 #endif//__AV_DIRECTORY__

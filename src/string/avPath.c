@@ -113,14 +113,14 @@ static void removeDir(Directory* dir, AvPath path) {
     }
     dir->child = nullptr;
     destroyPathList(dir);
-    
+
 }
 
 static void cachedStringInvalidate(AvPath path) {
     avStringFree(&path->cachedString);
 }
 
-void avPathResolve(AvPath path) {
+void avPathSimplify(AvPath path) {
     avAssert(path != nullptr, "path must be valid");
 
     Directory* dir = path->root;
@@ -132,7 +132,6 @@ void avPathResolve(AvPath path) {
     }
     while (dir) {
         Directory* next = dir->child;
-        avStringPrintLn(dir->str);
         if (avStringEquals(dir->str, AV_CSTR("."))) {
             removeDir(dir, path);
             dir = next;
@@ -197,6 +196,7 @@ void avPathGetStr(AvStringRef str, AvPath path) {
         length += dir->str.len + 1;
         dir = dir->child;
     }
+    length-=1;
     AvStringHeapMemory mem;
     avStringMemoryHeapAllocate(length, &mem);
     uint32 writeIndex = 0;
@@ -214,7 +214,38 @@ void avPathGetStr(AvStringRef str, AvPath path) {
     avStringClone(&path->cachedString, *str);
 }
 
+void avPathChangeDirectory(AvString str, AvPath path) {
+    Directory* dir;
+    createPathList(str, &dir);
+    if (dir->str.memory == nullptr
+#ifdef _WIN32
+        || stringIsWinDriveLetter(dir->str)
+#endif
+        ) {
+        destroyPathList(path->root);
+        path->root = dir;
+    } else {
+        Directory* lastDir = path->root;
+        while (true) {
+            if (lastDir->child) {
+                lastDir = lastDir->child;
+                continue;
+            }
+            break;
+        }
+        lastDir->child = dir;
+        dir->parent = lastDir;
+    }
 
+    cachedStringInvalidate(path);
+}
+
+void avPathClone(AvPath* dst, AvPath src) {
+    AvString str = AV_EMPTY;
+    avPathGetStr(&str, src);
+    avPathCreate(str, dst);
+    avStringFree(&str);
+}
 
 void avPathDestroy(AvPath path) {
     avStringFree(&path->cachedString);

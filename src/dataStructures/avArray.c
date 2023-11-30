@@ -63,7 +63,7 @@ void avArrayDeallocateElements(AvArrayRef array, AvDeallocateElementCallback dea
     avAssert(array != nullptr, "array must be a valid reference");
     avAssert(array->allocatedSize != 0, "array must be allocated first");
     for (uint32 i = 0; i < array->count; i++) {
-        void* data = array->freeCallbackOptions.dereferenceElement ? (void*)getPtr(i, array) : getPtr(i, array);
+        void* data = array->freeCallbackOptions.dereferenceElement ? *(void**)getPtr(i, array) : getPtr(i, array);
         deallocElement(data, array->elementSize);
     }
 }
@@ -76,11 +76,11 @@ static void arrayFree(AvArrayRef array){
 void avArrayDestroyElements(AvArrayRef array, AvDestroyElementCallback destroyCallback){
     avAssert(array != nullptr, "array must be a valid reference");
     avAssert(array->allocatedSize != 0, "array must be allocated first");
-    if (!array->freeCallbackOptions.dereferenceElement) {
+    if (array->freeCallbackOptions.dereferenceElement) {
         avAssert(array->elementSize == sizeof(void*), "cannot call destroy on non pointer types");
     }
     for (uint32 i = 0; i < array->count; i++) {
-        void* data = array->freeCallbackOptions.dereferenceElement ? (void*)getPtr(i, array) : getPtr(i, array);
+        void* data = array->freeCallbackOptions.dereferenceElement ? *(void**)getPtr(i, array) : getPtr(i, array);
         destroyCallback(data);
     }
 }
