@@ -3,24 +3,25 @@
 echo compiling bootstrap mechanism
 mkdir bootstrap
 cd bootstrap
-self = $(basename "$0")
-gcc - o tmp - x c $self -Wl,-rpath,.
+self=$(basename "$0")
+gcc -o tmp -x c ../$self
 echo compiled bootstrap mechanism
 echo bootstrapping
-run . / tmp $@
-ret = $ ?
-if[$ret == 0]; then
-echo boostrapping successfull
+./tmp $@
+ret=$?
+if [ $ret == 0 ]; then
+    echo boostrapping successfull
 else
-echo bootstrapping failed
+    echo bootstrapping failed
 fi
 rm tmp
 cd ..
-rmdir bootstrap
+rm -d -r bootstrap
 exit $ret
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
 #include "include/AvUtils/avTypes.h"
@@ -38,7 +39,7 @@ typedef struct File {
 
 int compileFile(File file, unsigned int index, unsigned int max) {
     char buffer[2048] = { 0 };
-    sprintf_s(buffer, 2048, "%s %s -c -o %s ../%s -I../include", CC, CFLAGS, file.output, file.source);
+    sprintf(buffer, "%s %s -c -o %s ../%s -I../include", CC, CFLAGS, file.output, file.source);
     int result = system(buffer);
     printf("[%u/%u] compiling %s\n", index, max, file.source);
     return result;
@@ -50,10 +51,10 @@ int linkFile(const char* output, unsigned int fileCount, const File files[], uns
     
     int offset = 0;
     for(uint i = 0; i < fileCount; i++){
-        offset += sprintf_s(objects + offset, 1024 - offset, "%s ", files[i].output);
+        offset += sprintf(objects + offset, "%s ", files[i].output);
     }
 
-    sprintf_s(buffer, 2048, "%s %s -o ../%s %s ", CC, CFLAGS, output, objects);
+    sprintf(buffer, "%s %s -o ../%s %s ", CC, CFLAGS, output, objects);
     int result = system(buffer);
     printf("[%u/%u] linking %s\n", index, max, output);
     return result;
