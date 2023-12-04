@@ -102,17 +102,6 @@ void avStringShift(AvStringRef str, uint64 newOffset) {
 	memcpy((char*)&str->chrs, &newChrs, sizeof(str->chrs));
 }
 
-static uint32 stringMemoryFindReference(AvStringRef ref, AvStringMemoryRef memory) {
-	avAssert(memory != nullptr, "memory must be a valid reference");
-	avAssert(ref != nullptr, "ref must be a valid reference");
-	for (uint32 i = 0; i < memory->referenceCount; i++) {
-		if (memory->references[i] == ref) {
-			return i;
-		}
-	}
-	return (uint32)AV_STRING_NULL;
-}
-
 void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringMemoryRef memory) {
 	avAssert(memory != 0, "memory must be valid");
 	avAssert(dst != 0, "destination must be a valid reference");
@@ -138,23 +127,23 @@ void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringM
 		.memory = memory
 	};
 
-	if (dst->memory == nullptr || stringMemoryFindReference(dst, memory) != AV_STRING_NULL) {
-		// update references
-		uint32 referenceIndex = memory->referenceCount++;
-		memory->references = avReallocate(memory->references, sizeof(AvString) * memory->referenceCount, "reallocating memory references");
-		memory->references[referenceIndex] = dst;
-	}
+	memory->referenceCount++;
 
 	memcpy(dst, &result, sizeof(AvString));
 }
 
-static void stringMemoryRemoveReference(uint32 refIndex, AvStringMemoryRef memory) {
+void avStringMemoryClone(AvStringMemoryRef* dst, AvStringMemory src){
+	avAssert(dst != nullptr, "destination must be a valid handle");
+	avAssert(*dst == nullptr, "destination must be empty memory");
+
+	avStringMemoryHeapAllocate(src.capacity, dst);
+	avStringMemoryStore(AV_STR(src.data, src.capacity), 0, src.capacity, *dst);
+}
+
+static void stringMemoryRemoveReference(AvStringMemoryRef memory) {
 	avAssert(memory != nullptr, "memory must be a valid reference");
-	avAssert(refIndex != (uint32)-1, "refIndex must be a valid index");
-	avAssert(refIndex < memory->referenceCount, "refIndex is invalide");
-	uint32 remainingReferences = memory->referenceCount - refIndex - 1;
-	memcpy(memory->references + refIndex, memory->references + refIndex + 1, sizeof(AvStringRef) * remainingReferences);
-	avReallocate(memory->references, sizeof(AvStringRef) * (memory->referenceCount - 1), "reallocating memory references");
+	avAssert(memory->referenceCount > 0, "freeing while no more references should remain");
+
 	memory->referenceCount--;
 
 	if (memory->referenceCount == 0) {
@@ -168,20 +157,19 @@ void avStringFree(AvStringRef str) {
 	if (str->memory == nullptr) {
 		return;
 	}
+	//printf("string { chrs = %.*s, len = %lu, memory = %p }\n", str->len, str->chrs, str->len, str->memory);
 	AvStringMemoryRef memory = str->memory;
 	avAssert(memory->referenceCount > 0, "string memory references are corrupt");
 
-	uint32 refIndex = stringMemoryFindReference(str, memory);
-	stringMemoryRemoveReference(refIndex, memory);
-
+	stringMemoryRemoveReference(memory);
 	memset(str, 0, sizeof(AvString));
 }
 
 void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory) {
 	avAssert(memory != nullptr, "invalid heap memory pointer");
 	(*memory) = avCallocate(1, sizeof(AvStringMemory), "allocating string memory on heap");
-	avStringMemoryAllocate(capacity, *memory);
 	(*memory)->properties.heapAllocated = true;
+	avStringMemoryAllocate(capacity, *memory);
 }
 
 void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory) {
@@ -189,76 +177,74 @@ void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory) {
 	avAssert(memory->data == nullptr, "string memory already allocated");
 	avAssert(memory->capacity == 0, "string memory already allocated");
 	avAssert(memory->referenceCount == 0, "string memory already allocated");
-	avAssert(memory->references == nullptr, "string memory already allocated");
 	avAssert(capacity != 0, "capacity must be >1");
 
 	memory->capacity = capacity;
 	memory->data = avCallocate(capacity + NULL_TERMINATOR_SIZE, 1, "allocating string data");
 	memory->referenceCount = 0;
-	memory->properties.heapAllocated = false;
 
 #ifndef NDEBUG
-	if (debugContext) {
+	if (debugContext && !memory->properties.heapAllocated) {
 		memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->allocatedMemory);
 	}
 #endif
 
 }
 
-void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory) {
-	avAssert(memory != nullptr, "invalid memory reference");
-	avAssert(capacity, "resize to 0 size is not allowed");
-	avAssert(memory->data != nullptr, "resizing unallocated memory is not allowed");
-	avAssert(memory->capacity, "resizing unallocated memory is not allowed");
+// void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory) {
+// 	avAssert(memory != nullptr, "invalid memory reference");
+// 	avAssert(capacity, "resize to 0 size is not allowed");
+// 	avAssert(memory->data != nullptr, "resizing unallocated memory is not allowed");
+// 	avAssert(memory->capacity, "resizing unallocated memory is not allowed");
 
-	char* prevData = memory->data;
-	uint64 prevCapacity = memory->capacity;
-	memory->data = avReallocate(memory->data, capacity + NULL_TERMINATOR_SIZE, "reallocating string data");
-	if (capacity > prevCapacity) {
-		uint64 diffCapacity = capacity - prevCapacity;
-		memset(memory->data + prevCapacity, 0, diffCapacity + NULL_TERMINATOR_SIZE);
-	}
-	memory->capacity = capacity;
+// 	char* prevData = memory->data;
+// 	uint64 prevCapacity = memory->capacity;
+// 	memory->data = avReallocate(memory->data, capacity + NULL_TERMINATOR_SIZE, "reallocating string data");
+// 	if (capacity > prevCapacity) {
+// 		uint64 diffCapacity = capacity - prevCapacity;
+// 		memset(memory->data + prevCapacity, 0, diffCapacity + NULL_TERMINATOR_SIZE);
+// 	}
+// 	memory->capacity = capacity;
 
-	// update references to new data
-	for (uint32 i = 0; i < memory->referenceCount; i++) {
-		AvStringRef str = memory->references[i];
-		avAssert(str != nullptr, "references are corrupted");
-		avAssert(str->memory == memory, "string must be allocated from this memory");
+// 	// update references to new data
+// 	for (uint32 i = 0; i < memory->referenceCount; i++) {
+// 		AvStringRef str = memory->references[i];
+// 		avAssert(str != nullptr, "references are corrupted");
+// 		avAssert(str->memory == memory, "string must be allocated from this memory");
 
-		uint64 offset = str->chrs - prevData;
-		uint64 length = AV_MIN(str->len + offset, capacity) - offset;
+// 		uint64 offset = str->chrs - prevData;
+// 		uint64 length = AV_MIN(str->len + offset, capacity) - offset;
 
-		if (offset >= capacity || length == 0) {
-			stringMemoryRemoveReference(i, memory);
-			memset(str, 0, sizeof(AvString));
-			i--;
-			continue;
-		}
+// 		if (offset >= capacity || length == 0) {
+// 			stringMemoryRemoveReference(i, memory);
+// 			memset(str, 0, sizeof(AvString));
+// 			i--;
+// 			continue;
+// 		}
 
-		AvString tmpStr = {
-			.chrs = memory->data + offset,
-			.len = length,
-			.memory = memory
-		};
-		memcpy(str, &tmpStr, sizeof(AvString));
-	}
+// 		AvString tmpStr = {
+// 			.chrs = memory->data + offset,
+// 			.len = length,
+// 			.memory = memory
+// 		};
+// 		memcpy(str, &tmpStr, sizeof(AvString));
+// 	}
 
-}
+// }
 
-void avStringMemoryResizeSection(uint64 offset, uint64 length, AvStringMemoryRef memory) {
-	avAssert(memory != nullptr, "invalid memory reference");
+// void avStringMemoryResizeSection(uint64 offset, uint64 length, AvStringMemoryRef memory) {
+// 	avAssert(memory != nullptr, "invalid memory reference");
 
-	uint64 newSize = AV_MAX(offset + length, memory->capacity);
-	avStringMemoryResize(newSize, memory);
-}
+// 	uint64 newSize = AV_MAX(offset + length, memory->capacity);
+// 	avStringMemoryResize(newSize, memory);
+// }
 
 void avStringMemoryFree(AvStringMemoryRef memory) {
 	avAssert(memory != nullptr, "invalid memory reference");
 	avAssert(memory->referenceCount == 0, "freeing string memory still in use");
 
 #ifndef NDEBUG
-	if (debugContext) {
+	if (debugContext && !memory->properties.heapAllocated) {
 		avDynamicArrayRemove(memory->properties.contextAllocationIndex, debugContext->allocatedMemory);
 		for (uint32 i = memory->properties.contextAllocationIndex; i < avDynamicArrayGetSize(debugContext->allocatedMemory); i++) {
 			AvStringMemoryRef tmp;
@@ -528,25 +514,21 @@ void avStringReplaceChar(AvStringRef str, char original, char replacement) {
 	}
 }
 
-uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement) {
+uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvString replacement) {
+	avAssert(dst != nullptr, "destination must be a valid reference");
 
-
-	uint64 count = avStringFindCount(*str, sequence);
+	uint64 count = avStringFindCount(str, sequence);
 
 	if (count == 0) {
+		avStringClone(dst, str);
 		return 0;
 	}
 
-	if (str->memory == nullptr) {
-		avStringClone(str, *str);
-	}
-
-	uint64 remainingLength = str->len - count * sequence.len;
+	uint64 remainingLength = str.len - count * sequence.len;
 	uint64 newLength = remainingLength + count * replacement.len;
+	AvStringHeapMemory memory;
+	avStringMemoryHeapAllocate(newLength, &memory);
 
-	avStringMemoryResizeSection(str->chrs - str->memory->data, newLength, str->memory);
-	AvString readStr = { 0 };
-	avStringClone(&readStr, *str);
 
 	uint64 writeIndex = 0;
 	uint64 readIndex = 0;
@@ -554,29 +536,28 @@ uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement)
 
 	while (countReplaced != count) {
 		AvString remainingStr = AV_STR(
-			readStr.chrs + readIndex,
-			readStr.len - readIndex
+			str.chrs + readIndex,
+			str.len - readIndex
 		);
 		strOffset offset = avStringFindFirstOccuranceOf(
 			remainingStr,
 			sequence
 		);
-		avStringMemoryStore(remainingStr, writeIndex, offset, str->memory);
+		avStringMemoryStore(remainingStr, writeIndex, offset, memory);
 		readIndex += offset;
 		writeIndex += offset;
-		avStringMemoryStore(replacement, writeIndex, replacement.len, str->memory);
+		avStringMemoryStore(replacement, writeIndex, replacement.len, memory);
 		readIndex += sequence.len;
 		writeIndex += replacement.len;
 		countReplaced++;
 	}
 	AvString remainingStr = AV_STR(
-		readStr.chrs + readIndex,
-		readStr.len - readIndex
+		str.chrs + readIndex,
+		str.len - readIndex
 	);
-	avStringMemoryStore(remainingStr, readIndex, remainingStr.len, str->memory);
-	avStringFree(&readStr);
+	avStringMemoryStore(remainingStr, readIndex, remainingStr.len, memory);
 
-	avStringResize(str, AV_STRING_FULL_LENGTH);
+	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
 	return count;
 }
 
@@ -610,28 +591,26 @@ void avStringJoin_(AvStringRef dst, ...) {
 	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
 }
 
-void avStringAppend(AvStringRef dst, AvString src) {
-	avAssert(dst != nullptr, "destination must be a valid reference");
-	if (dst->memory == nullptr) {
-		avStringMemoryAllocStore(src, dst->memory);
-		avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, dst->memory);
-		return;
-	}
-	AvStringMemoryRef memory = dst->memory;
-	if ((dst->chrs - dst->memory->data) + dst->len < dst->memory->capacity) {
-		avStringMemoryHeapAllocate(dst->len + src.len, &memory);
-		avStringMemoryStore(*dst, 0, dst->len, memory);
-		avStringMemoryStore(src, dst->len, src.len, memory);
-		avFree(dst);
-		avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
-	} else {
-		avStringMemoryResizeSection(dst->len, src.len, memory);
-		avStringMemoryStore(src, dst->len, src.len, memory);
-		avStringResize(dst, dst->len + src.len);
-	}
-	
-
-}
+// void avStringAppend(AvStringRef dst, AvString src) {
+// 	avAssert(dst != nullptr, "destination must be a valid reference");
+// 	if (dst->memory == nullptr) {
+// 		avStringMemoryAllocStore(src, dst->memory);
+// 		avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, dst->memory);
+// 		return;
+// 	}
+// 	AvStringMemoryRef memory = dst->memory;
+// 	if ((dst->chrs - dst->memory->data) + dst->len < dst->memory->capacity) {
+// 		avStringMemoryHeapAllocate(dst->len + src.len, &memory);
+// 		avStringMemoryStore(*dst, 0, dst->len, memory);
+// 		avStringMemoryStore(src, dst->len, src.len, memory);
+// 		avFree(dst);
+// 		avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
+// 	} else {
+// 		avStringMemoryResizeSection(dst->len, src.len, memory);
+// 		avStringMemoryStore(src, dst->len, src.len, memory);
+// 		avStringResize(dst, dst->len + src.len);
+// 	}
+// }
 
 void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef memory, ...) {
 
@@ -670,6 +649,10 @@ void avStringMemoryStoreCharArrays(AvStringMemoryRef memory, uint32 count, const
 
 void avStringPrint(AvString str) {
 	printf("%.*s", str.len, str.chrs);
+}
+
+void avStringPrintData(AvString str){
+	printf("{ .chrs=%.*s, .len=%lu .memory=0x%p }\n", str.len, str.chrs, str.len, str.memory);
 }
 
 void avStringPrintLn(AvString str) {

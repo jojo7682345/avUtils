@@ -18,9 +18,7 @@ typedef struct AvStringMemoryProperties {
 typedef struct AvStringMemory {
 	char* data; // the characters
 	uint64 capacity; // the amount of characters allocated
-
 	uint64 referenceCount;
-	void** references;
 	AvStringMemoryProperties properties;
 } AvStringMemory;
 typedef AvStringMemory* AvStringHeapMemory;
@@ -50,6 +48,8 @@ void avStringCopySection(AvStringRef dst, uint64 offset, uint64 length, AvString
 
 void avStringFromMemory(AvStringRef dst, uint64 offset, uint64 length, AvStringMemoryRef memory);
 
+
+
 /// @brief removes a reference from the string memory, freeing it 
 /// @param str 
 void avStringFree(AvStringRef str);
@@ -64,6 +64,8 @@ uint64 avCStringLength(const char* str);
 /// @param memory pointer to a handle to the string memory
 void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory);
 
+void avStringMemoryClone(AvStringMemoryRef* dst, AvStringMemory src);
+
 /// @brief allocates the data for a string 
 /// @param capacity the amound of characters to allocate
 /// @param memory reference to the string memory
@@ -75,6 +77,8 @@ void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory);
 void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory);
 
 void avStringMemoryResizeSection(uint64 offset, uint64 length, AvStringMemoryRef memory);
+
+
 
 /// @brief frees the data allocated for the string memory
 /// @param memory reference to the string memory
@@ -124,7 +128,7 @@ bool32 avStringEquals(AvString strA, AvString strB);
 int32 avStringCompare(AvString strA, AvString strB);
 
 void avStringReplaceChar(AvStringRef str, char original, char replacement);
-uint64 avStringReplace(AvStringRef str, AvString sequence, AvString replacement);
+uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvString replacement);
 
 void avStringJoin_(AvStringRef dst, ...);
 #define avStringJoin(dst, ...) avStringJoin_(dst,__VA_ARGS__, AV_STR((char*)AV_STRING_NULL, AV_STRING_NULL))
@@ -136,6 +140,7 @@ void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef result, ...);
 void avStringMemoryStoreCharArrays(AvStringMemoryRef result, uint32 count, const char* strs[]);
 
 void avStringPrint(AvString str);
+void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 

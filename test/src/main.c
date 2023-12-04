@@ -213,12 +213,12 @@ void testString() {
 	avStringPrint(str);
 	printf("\n");
 
-
-	avStringReplace(&str, AV_CSTR("_"), AV_CSTR(" insert "));
-
+	AvString replacedString = AV_EMPTY;
+	avStringReplace(&replacedString, str, AV_CSTR("_"), AV_CSTR(" insert "));
+	avStringFree(&str);
 	avStringPrint(str);
 
-	avStringFree(&str);
+
 
 	printf("\n");
 
@@ -240,40 +240,27 @@ void testString() {
 	avStringDebugContextEnd;
 }
 
-void testPath(){
+void testPath(const char* location) {
 	avStringDebugContextStart;
-
 	AvPath path = AV_EMPTY;
-	avPathCreate(AV_CSTR("C:/test/../test"), &path);
+	avPathOpen(AV_CSTR(location), &path);
 
-	AvString str = AV_EMPTY; 
-	avPathGetStr(&str, path);
-	avStringPrintLn(str);
-	avStringFree(&str);
+	avStringPrint(path.path);
+	if (path.type == AV_PATH_TYPE_DIRECTORY) {
+		printf(" is a directory\n");
+		avPathGetDirectoryContents(&path);
 
-	avPathSimplify(path);
-	avPathMakeAbsolute(path);
+	} else if (path.type == AV_PATH_TYPE_FILE) {
+		printf(" is a file\n");
+	} else {
+		printf(" is invalid\n");
+	}
+	for (uint32 i = 0; i < path.directory.contentCount; i++) {
+		//avStringPrintData(path.directory.content[i].path);
+		avStringPrintln(path.directory.content[i].path);
+	}
 
-	avPathGetStr(&str, path);
-	avStringPrintln(str);
-	avStringFree(&str);
-
-	avPathChangeDirectory(AV_CSTR("../SDK"), path);
-
-	avPathGetStr(&str, path);
-	avStringPrintln(str);
-	avStringFree(&str);
-
-	avPathSimplify(path);
-	
-	avPathGetStr(&str, path);
-	avStringPrintln(str);
-	avStringFree(&str);
-
-
-	avPathDestroy(path);
-
-
+	avPathClose(&path);
 	avStringDebugContextEnd;
 }
 
@@ -328,19 +315,6 @@ void testFile() {
 	avStringDebugContextEnd;
 }
 
-void testDirectory() {
-	AvDirectory dir;
-	AvPath path = AV_EMPTY;
-	avPathCreate(AV_CSTR("/SDK_CCR/avUtils"), &path);
-	avDirectoryOpen(path, &dir);
-
-	uint32 count = avDirectoryGetContentCount(dir);
-	printf("directory contains %u file(s)\n", count);
-
-	avDirectoryClose(&dir);
-	avPathDestroy(path);	
-}
-
 void testProcess() {
 	AvProcess gcc;
 	avProcessCreate("echo", NULL, NULL, &gcc);
@@ -348,7 +322,7 @@ void testProcess() {
 	const char* arg[] = {
 		"test"
 	};
-	if (!avProcessStart(sizeof(arg)/sizeof(char*), arg, gcc)) {
+	if (!avProcessStart(sizeof(arg) / sizeof(char*), arg, gcc)) {
 		printf("failed to start gcc\n");
 	}
 	uint32 retCode = 0;
@@ -369,10 +343,9 @@ int main() {
 	testQueue();
 	testThread();
 	testMutex();
-	testString();
-	testPath();
 	testFile();
-	testDirectory();
+	testString();
+	testPath(".");
 
 	//testProcess();
 	printf("test completed\n");

@@ -1,8 +1,10 @@
 #include <AvUtils/filesystem/avDirectory.h>
 #include <AvUtils/avMemory.h>
+#define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 #include <AvUtils/dataStructures/avDynamicArray.h>
 #include <AvUtils/dataStructures/avArray.h>
 #include <AvUtils/avLogging.h>
+#include <AvUtils/string/avChar.h>
 
 #include <stdio.h>
 
@@ -12,180 +14,269 @@
 #include <dirent.h>
 #endif
 
-typedef struct AvDirectory_T {
-    AvPath path;
-    AvDirectory parent;
-    bool32 explored;
-    AV_DS(AvArray, AvDirectoryContent) content;
-} AvDirectory_T;
-
-static void listFiles(AvString path, AvDirectory dir);
-
-static void destroyContentElement(AvDirectoryContent* content, uint64 size) {
-    switch(content->type){
-        case AV_DIRECTORY_CONTENT_TYPE_DIRECTORY:
-            avDirectoryClose(&content->directory);
-        break;
-        case AV_DIRECTORY_CONTENT_TYPE_FILE:
-            avFileHandleDestroy(content->file);
-        break;
-        default:
-            printf("invalid type %i\n", content->type);
-            break;
-    }
+static AvPathType pathGetType(AvString str, AvPathPropertiesFlags* properties);
+static bool32 directoryExists(AvString str) {
+    return pathGetType(str, nullptr) == AV_PATH_TYPE_DIRECTORY;
 }
 
-static void directoryListFiles(AvDirectory dir) {
-    avAssert(dir != nullptr, "dir must be a valid reference");
-    avAssert(dir->path != nullptr, "dir must have a path");
+typedef struct Content {
+    AvPathType type;
+    AvString name;
+} Content;
 
-    AvString directoryPath = AV_EMPTY;
-    avPathGetStr(&directoryPath, dir->path);
-    avStringAppend(&directoryPath, AV_CSTR("/*"));
+typedef struct ContentList {
+    bool32 started;
+    AvString path;
+#ifdef _WIN32
+    HANDLE hFind;
+    WIN32_FIND_DATAA  findFileData;
+#else
 
-    listFiles(directoryPath, dir);
-    avStringFree(&directoryPath);
-    dir->explored = true;
+#endif
+}ContentList;
+
+static void startContentList(AvPathRef path, Content* content, ContentList* list);
+static bool32 getNextEntry(Content* content, ContentList* list);
+static void endContentList(Content* content, ContentList* list);
+
+
+static void createContent(Content* content, AvString name, AvPathType type) {
+    avStringClone(&content->name, name);
+    content->type = type;
 }
 
-bool32 avDirectoryOpen(AvPath path, AvDirectory* dir) {
-
-    (*dir) = avCallocate(1, sizeof(AvDirectory_T), "allocating directory handle");
-    avPathClone(&(*dir)->path, path);
-    (*dir)->parent = nullptr;
-    (*dir)->explored = false;
-    
-
+static void destroyContent(Content* content) {
+    avStringFree(&content->name);
+    content->type = AV_PATH_TYPE_UNKNOWN;
 }
 
-uint32 avDirectoryGetContentCount(AvDirectory dir){
-    if(dir->explored == false){
-        directoryListFiles(dir);
-    }
+static void processPath(AvStringRef dst, AvString src) {
+    avAssert(dst->memory == nullptr, "string must be emtpy");
 
-    return dir->content.count;
-
-}
-
-uint32 avDirectoryRefresh(AvDirectory dir){
-    directoryListFiles(dir);
-}
-
-AvDirectoryContentType avDirectoryGetContentType(uint32 index, AvDirectory dir){
-    if(dir->explored==false){
-        directoryListFiles(dir);
-    }
-    if(index >= dir->content.count){
-        return AV_DIRECTORY_CONTENT_TYPE_INVALID;
-    }
-
-    AvDirectoryContent content = AV_EMPTY;
-    avArrayRead(&content, index, &dir->content);
-    return content.type;
-}
-
-AvFile avDirectoryOpenFile(uint32 index, AvDirectory dir){
-    if (dir->explored == false) {
-        directoryListFiles(dir);
-    }
-    if (index >= dir->content.count) {
-        return nullptr;
-    }
-    AvDirectoryContent content = AV_EMPTY;
-    avArrayRead(&content, index, &dir->content);
-    if(content.type != AV_DIRECTORY_CONTENT_TYPE_FILE){
-        return nullptr;
-    }
-    return content.file;
-}
-AvDirectory avDirectoryOpenSubfolder(uint32 index, AvDirectory dir){
-    if (dir->explored == false) {
-        directoryListFiles(dir);
-    }
-    if (index >= dir->content.count) {
-        return nullptr;
-    }
-    AvDirectoryContent content = AV_EMPTY;
-    avArrayRead(&content, index, &dir->content);
-    if (content.type != AV_DIRECTORY_CONTENT_TYPE_DIRECTORY) {
-        return nullptr;
-    }
-    return content.directory;
-}
-
-void avDirectoryGetPathStr(AvStringRef str, AvDirectory dir){
-    avPathGetStr(str, dir->path);
-}
-
-void avDirectoryClose(AvDirectory* dir) {
-
-    avArrayFree(&(*dir)->content);
-    avPathDestroy((*dir)->path);
-
-    avFree(*dir);
-    *dir = nullptr;
-}
-
-static AvDirectoryContent createFile(AvString path, AvString name) {
-    AvDirectoryContent content = AV_EMPTY;
-    content.type = AV_DIRECTORY_CONTENT_TYPE_FILE;
+    avStringDebugContextStart;
     AvString str = AV_EMPTY;
-    avStringJoin(&str, path, AV_CSTR("/"), name);
-    avFileHandleCreate(str, &content.file);
+    if (src.len == 0 || src.chrs == nullptr) {
+        avStringClone(&str, AV_CSTR("."));
+        //printf("cloned\n");
+    } else {
+        avStringClone(&str, src);
+        avStringReplaceChar(&str, '\\', '/');
+    }
+
+    AvArray paths = AV_EMPTY;
+    avStringSplitOnChar(&paths, '/', str);
+    //printf("splitted\n");
+    uint64 length = 0;
+    for (uint32 index = 0; index < paths.count; index++) {
+        AvString dir = AV_EMPTY;
+        avArrayRead(&dir, index, &paths);
+        if (dir.len == 0 && index != 0) {
+            continue;
+        }
+        length += dir.len;
+        length += 1;
+    }
+    length += 1; // for * character, for easy file searching for win32 without having to allocate a new string
+    //printf("lengthd %lu\n", length);
+    AvStringHeapMemory memory;
+    avStringMemoryHeapAllocate(length, &memory);
+    uint64 writeIndex = 0;
+    for (uint32 i = 0; i < paths.count; i++) {
+        AvString dir = AV_EMPTY;
+        avArrayRead(&dir, i, &paths);
+        if (dir.len == 0 && i != 0) {
+            continue;
+        }
+        avStringMemoryStore(dir, writeIndex, dir.len, memory);
+        writeIndex += dir.len;
+        avStringMemoryStore(AV_CSTR("/"), writeIndex++, 1, memory);
+    }
+    avStringMemoryStore(AV_CSTR("*"), writeIndex++, 1, memory);
+    avStringFromMemory(dst, 0, memory->capacity - 2, memory);
+    //printf("stored\n");
+    avArrayFree(&paths);
+    //printf("array freed\n");
     avStringFree(&str);
-    return content;
+    //printf("freed agained\n");
+    avStringDebugContextEnd;
+
 }
 
-static AvDirectoryContent createDir(AvDirectory parent, AvString name) {
-    AvDirectoryContent content = AV_EMPTY;
-    content.type = AV_DIRECTORY_CONTENT_TYPE_DIRECTORY;
-    AvPath path;
-    avPathClone(&path, parent->path);
-    avPathChangeDirectory(name, path);
-    avDirectoryOpen(path, &content.directory);
-    avPathDestroy(path);
-    content.directory->parent = parent;
-    return content;
+bool32 avPathOpen(AvString str, AvPathRef path) {
+    avStringDebugContextStart;
+
+    processPath(&path->path, str);
+    //printf("processed\n");
+    path->type = pathGetType(path->path, &path->properties);
+    //printf("typed\n");
+    if (path->type == AV_PATH_TYPE_UNKNOWN) {
+        avPathClose(path);
+        avStringDebugContextEnd;
+        return false;
+    }
+
+    avStringDebugContextEnd;
+    return true;
 }
 
+bool32 avPathGetFile(AvPathRef path) {
+    if (path->type != AV_PATH_TYPE_FILE) {
+        return false;
+    }
+    avFileHandleCreate(path->path, &path->file);
+    return true;
+}
+
+bool32 avPathGetDirectoryContents(AvPathRef path) {
+    if (path->type != AV_PATH_TYPE_DIRECTORY) {
+        return false;
+    }
+
+    AvDynamicArray contents = AV_EMPTY;
+    avDynamicArrayCreate(0, sizeof(AvPath), &contents);
+
+    ContentList list = AV_EMPTY;
+    Content content = AV_EMPTY;
+    startContentList(path, &content, &list);
+    do {
+        if (avStringEquals(content.name, AV_CSTR(".")) || avStringEquals(content.name, AV_CSTR(".."))) {
+            continue;
+        }
+
+
+        AvString fullPath = AV_EMPTY;
+        avStringJoin(&fullPath, path->path, AV_CSTR("/"), content.name);
+        if (pathGetType(fullPath, nullptr) == AV_PATH_TYPE_UNKNOWN) {
+            avStringFree(&fullPath);
+            continue;
+        }
+
+        AvPath tmpPath = AV_EMPTY;
+        uint32 index = avDynamicArrayAdd(&tmpPath, contents);
+        avPathOpen(fullPath, avDynamicArrayGetPtr(index, contents));
+
+        avStringFree(&fullPath);
+    } while (getNextEntry(&content, &list));
+    endContentList(&content, &list);
+
+    AvDirectory* dir = &path->directory;
+    uint32 contentCount = avDynamicArrayGetSize(contents);
+    dir->content = avCallocate(contentCount, sizeof(AvPath), "allocating path contents");
+    dir->contentCount = contentCount;
+
+    for (uint32 i = 0; i < contentCount; i++) {
+        AvPathRef dst = dir->content + i;
+        AvPath* src = (AvPath*)avDynamicArrayGetPtr(i, contents);
+
+        if (src->type == AV_PATH_TYPE_UNKNOWN) {
+            continue;
+        }
+
+        memcpy(dst, src, sizeof(AvPath));
+        dst->parent = path;
+    }
+    dir->explored = true;
+    avDynamicArrayDestroy(contents);
+    return true;
+}
+
+void avPathClose(AvPathRef path) {
+
+    avStringFree(&path->path);
+
+    if (path->type == AV_PATH_TYPE_FILE && path->file != nullptr) {
+        avFileHandleDestroy(path->file);
+        path->file = nullptr;
+        return;
+    }
+
+    if (path->type == AV_PATH_TYPE_DIRECTORY && path->directory.explored) {
+        for (uint32 i = 0; i < path->directory.contentCount; i++) {
+            avPathClose(&path->directory.content[i]);
+        }
+        avFree(path->directory.content);
+        path->directory.content = nullptr;
+        path->directory.contentCount = 0;
+        path->directory.explored = false;
+        return;
+    }
+}
 
 #ifdef _WIN32
 
-static void listFiles(AvString directoryPath, AvDirectory parent) {
+static AvPathType pathGetType(AvString str, AvPathPropertiesFlags* pathProperties) {
+    AvString path = AV_EMPTY;
+    avStringClone(&path, str);
+    DWORD attributes = GetFileAttributesA(path.chrs);
+    AvPathType type = AV_PATH_TYPE_UNKNOWN;
+    if (attributes == INVALID_FILE_ATTRIBUTES) {
+        avStringFree(&path);
+        type = AV_PATH_TYPE_UNKNOWN;
+        return type;
+    }
 
-    WIN32_FIND_DATA findFileData = {0};
-    HANDLE hFind = FindFirstFile(directoryPath.chrs, &findFileData);
-    if (hFind == INVALID_HANDLE_VALUE) {
+    if (pathProperties) {
+        (*pathProperties) = 0;
+        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) ? AV_PATH_PROPERTY_DIR : 0;
+        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_READONLY) != 0) ? AV_PATH_PROPERTY_READONLY : 0;
+        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? AV_PATH_PROPERTY_HIDDEN : 0;
+        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ? AV_PATH_PROPERTY_SYMLINK : 0;
+    }
+
+    if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+        type = AV_PATH_TYPE_DIRECTORY;
+        avStringFree(&path);
+        return type;
+    }
+
+    type = AV_PATH_TYPE_FILE;
+    avStringFree(&path);
+    return type;
+}
+
+static void startContentList(AvPathRef path, Content* content, ContentList* list) {
+    avStringFromMemory(&list->path, AV_STRING_WHOLE_MEMORY, path->path.memory);
+    list->hFind = FindFirstFileA(list->path.chrs, &list->findFileData);
+    if (list->hFind == INVALID_HANDLE_VALUE) {
+        list->started = false;
+        avStringFree(&list->path);
+    }
+    list->started = true;
+    createContent(
+        content,
+        AV_CSTR(list->findFileData.cFileName),
+        list->findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? AV_PATH_TYPE_DIRECTORY : AV_PATH_TYPE_FILE
+    );
+}
+
+static void endContentList(Content* content, ContentList* list) {
+    destroyContent(content);
+
+    if (list->started == false) {
         return;
     }
-    AvDynamicArray list;
-    avDynamicArrayCreate(0, sizeof(AvDirectoryContent), &list);
-    do {
-        if(strcmp(findFileData.cFileName, ".")==0 || strcmp(findFileData.cFileName, "..")==0){
-            continue;
-        }
-        bool32 isDir = findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        
-        AvDirectoryContent content = isDir ? 
-            createDir(parent, AV_CSTR(findFileData.cFileName)) :
-            createFile(AV_STR(directoryPath.chrs,directoryPath.len-2), AV_CSTR(findFileData.cFileName));
+    FindClose(list->hFind);
+    avStringFree(&list->path);
+    list->started = false;
+    list->hFind = 0;
+}
 
-        avDynamicArrayAdd(&content, list);
-
-    } while (FindNextFileA(hFind, &findFileData) != 0);
-    FindClose(hFind);
-    avArrayAllocateWithFreeCallback(avDynamicArrayGetSize(list), sizeof(AvDirectoryContent), &parent->content, false,(AvDeallocateElementCallback) &destroyContentElement, nullptr);
-    for(uint32 i = 0; i < avDynamicArrayGetSize(list); i++){
-        AvDirectoryContent content;
-        avDynamicArrayRead(&content, i, list);
-        avArrayWrite(&content, i, &parent->content);
+static bool32 getNextEntry(Content* content, ContentList* list) {
+    avAssert(list->started, "list must be started first");
+    destroyContent(content);
+    if (FindNextFileA(list->hFind, &list->findFileData) == 0) {
+        return false;
     }
-    avDynamicArrayDestroy(list);
+    createContent(
+        content,
+        AV_CSTR(list->findFileData.cFileName),
+        list->findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? AV_PATH_TYPE_DIRECTORY : AV_PATH_TYPE_FILE
+    );
+    return true;
 }
 
 #else
-static void listFiles(AvString path, AvDirectory dir){
 
-}
+
 
 #endif

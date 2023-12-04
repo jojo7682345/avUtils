@@ -81,6 +81,7 @@ void avArrayDestroyElements(AvArrayRef array, AvDestroyElementCallback destroyCa
     }
     for (uint32 i = 0; i < array->count; i++) {
         void* data = array->freeCallbackOptions.dereferenceElement ? *(void**)getPtr(i, array) : getPtr(i, array);
+        //printf("destroying %p\n", data);
         destroyCallback(data);
     }
 }
@@ -96,7 +97,7 @@ void avArrayFreeAndDestroy(AvArrayRef array, AvDestroyElementCallback destroyHan
 void avArrayFree(AvArrayRef array){
     avAssert(array != nullptr, "array must be a valid reference");
     avAssert(!((array->freeCallbackOptions.deallocateElementCallback != nullptr) && (array->freeCallbackOptions.destroyElementCallback != nullptr)), "only one destroycallback can be defined");
-    
+    //printf("asserted\n");
     if (array->freeCallbackOptions.deallocateElementCallback) {
         avArrayDeallocateElements(array, array->freeCallbackOptions.deallocateElementCallback);
         return;
