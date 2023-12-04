@@ -23,7 +23,7 @@ avBuild.*
 !build/builder.h
 
 #project tasks and launch configurations for visual studio
-!.vs/*.vs.json
+.vs/*.vs.json
 .obsidian
 
 CppProperties.json
