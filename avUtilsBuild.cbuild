@@ -1,0 +1,16 @@
+#include <AvUtils/avBuilder.h>
+
+void all() {
+
+
+
+}
+
+void clean(){
+
+}
+
+void avBuildSetup(){
+    avBuildRegisterConfiguration(AV_CSTR("all"), &all);
+    avBuildRegisterConfiguration(AV_CSTR("clean"), &clean);
+}
