@@ -14,14 +14,14 @@ typedef enum AvPathType {
 	AV_PATH_TYPE_DIRECTORY,
 } AvPathType;
 
-typedef enum AvPathProperties {
-	AV_PATH_PROPERTY_NORMAL			= 0,
-	AV_PATH_PROPERTY_DIR 			= 1 << 0,
-	AV_PATH_PROPERTY_SYMLINK 		= 1 << 1,
-	AV_PATH_PROPERTY_HIDDEN			= 1 << 2,
-	AV_PATH_PROPERTY_READONLY		= 1 << 3,
-} AvPathProperties;
-typedef uint32 AvPathPropertiesFlags;
+// typedef enum AvPathProperties {
+// 	AV_PATH_PROPERTY_NORMAL			= 0,
+// 	AV_PATH_PROPERTY_DIR 			= 1 << 0,
+// 	AV_PATH_PROPERTY_SYMLINK 		= 1 << 1,
+// 	AV_PATH_PROPERTY_HIDDEN			= 1 << 2,
+// 	AV_PATH_PROPERTY_READONLY		= 1 << 3,
+// } AvPathProperties;
+// typedef uint32 AvPathPropertiesFlags;
 
 typedef struct AvDirectory {
 	bool32 explored;
@@ -31,7 +31,7 @@ typedef struct AvDirectory {
 
 typedef struct AvPath {
 	AvPathType type;
-	AvPathPropertiesFlags properties;
+	//AvPathPropertiesFlags properties;
 	struct AvPath* parent;
 	AvString path;
 	union {

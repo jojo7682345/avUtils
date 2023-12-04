@@ -345,7 +345,7 @@ int main() {
 	testMutex();
 	testFile();
 	testString();
-	testPath(".");
+	testPath("/");
 
 	//testProcess();
 	printf("test completed\n");

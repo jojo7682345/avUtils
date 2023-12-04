@@ -7,16 +7,20 @@
 #include <AvUtils/string/avChar.h>
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
+#define __USE_MISC
 #include <dirent.h>
+#include <sys/stat.h>
+#include <stdlib.h>
 #endif
 
-static AvPathType pathGetType(AvString str, AvPathPropertiesFlags* properties);
+static AvPathType pathGetType(AvString str);
 static bool32 directoryExists(AvString str) {
-    return pathGetType(str, nullptr) == AV_PATH_TYPE_DIRECTORY;
+    return pathGetType(str) == AV_PATH_TYPE_DIRECTORY;
 }
 
 typedef struct Content {
@@ -31,7 +35,8 @@ typedef struct ContentList {
     HANDLE hFind;
     WIN32_FIND_DATAA  findFileData;
 #else
-
+    DIR* dir;
+    struct dirent* ent;
 #endif
 }ContentList;
 
@@ -92,7 +97,11 @@ static void processPath(AvStringRef dst, AvString src) {
         avStringMemoryStore(AV_CSTR("/"), writeIndex++, 1, memory);
     }
     avStringMemoryStore(AV_CSTR("*"), writeIndex++, 1, memory);
-    avStringFromMemory(dst, 0, memory->capacity - 2, memory);
+    if(memory->capacity-2 == 0){
+        avStringFromMemory(dst, 0, memory->capacity - 1, memory);
+    }else{
+        avStringFromMemory(dst, 0, memory->capacity - 2, memory);
+    }
     //printf("stored\n");
     avArrayFree(&paths);
     //printf("array freed\n");
@@ -107,7 +116,7 @@ bool32 avPathOpen(AvString str, AvPathRef path) {
 
     processPath(&path->path, str);
     //printf("processed\n");
-    path->type = pathGetType(path->path, &path->properties);
+    path->type = pathGetType(path->path);
     //printf("typed\n");
     if (path->type == AV_PATH_TYPE_UNKNOWN) {
         avPathClose(path);
@@ -146,7 +155,7 @@ bool32 avPathGetDirectoryContents(AvPathRef path) {
 
         AvString fullPath = AV_EMPTY;
         avStringJoin(&fullPath, path->path, AV_CSTR("/"), content.name);
-        if (pathGetType(fullPath, nullptr) == AV_PATH_TYPE_UNKNOWN) {
+        if (pathGetType(fullPath) == AV_PATH_TYPE_UNKNOWN) {
             avStringFree(&fullPath);
             continue;
         }
@@ -204,7 +213,7 @@ void avPathClose(AvPathRef path) {
 
 #ifdef _WIN32
 
-static AvPathType pathGetType(AvString str, AvPathPropertiesFlags* pathProperties) {
+static AvPathType pathGetType(AvString str) {
     AvString path = AV_EMPTY;
     avStringClone(&path, str);
     DWORD attributes = GetFileAttributesA(path.chrs);
@@ -215,13 +224,13 @@ static AvPathType pathGetType(AvString str, AvPathPropertiesFlags* pathPropertie
         return type;
     }
 
-    if (pathProperties) {
-        (*pathProperties) = 0;
-        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) ? AV_PATH_PROPERTY_DIR : 0;
-        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_READONLY) != 0) ? AV_PATH_PROPERTY_READONLY : 0;
-        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? AV_PATH_PROPERTY_HIDDEN : 0;
-        (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ? AV_PATH_PROPERTY_SYMLINK : 0;
-    }
+    // if (pathProperties) {
+    //     (*pathProperties) = 0;
+    //     (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) ? AV_PATH_PROPERTY_DIR : 0;
+    //     (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_READONLY) != 0) ? AV_PATH_PROPERTY_READONLY : 0;
+    //     (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_HIDDEN) != 0) ? AV_PATH_PROPERTY_HIDDEN : 0;
+    //     (*pathProperties) |= ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ? AV_PATH_PROPERTY_SYMLINK : 0;
+    // }
 
     if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
         type = AV_PATH_TYPE_DIRECTORY;
@@ -240,6 +249,7 @@ static void startContentList(AvPathRef path, Content* content, ContentList* list
     if (list->hFind == INVALID_HANDLE_VALUE) {
         list->started = false;
         avStringFree(&list->path);
+        return;
     }
     list->started = true;
     createContent(
@@ -277,6 +287,74 @@ static bool32 getNextEntry(Content* content, ContentList* list) {
 
 #else
 
+static AvPathType pathGetType(AvString str){
+    AvString path = AV_EMPTY;
+    avStringClone(&path, str);
 
+    struct stat buffer;
+    int result = stat(path.chrs, &buffer);
+
+    AvPathType type = AV_PATH_TYPE_UNKNOWN;
+    if (result != 0) {
+        avStringFree(&path);
+        type = AV_PATH_TYPE_UNKNOWN;
+        return type;
+    }
+    if ((buffer.st_mode & S_IFDIR) != 0)
+    {
+        type = AV_PATH_TYPE_DIRECTORY;
+        avStringFree(&path);
+        return type;
+    }
+
+    type = AV_PATH_TYPE_FILE;
+    avStringFree(&path);
+    return type;
+}
+
+static void startContentList(AvPathRef path, Content *content, ContentList *list){
+    avStringClone(&list->path, path->path);
+    list->dir = opendir(list->path.chrs);
+    if(list->dir == NULL){
+        list->started = false;
+        avStringFree(&list->path);
+        return;
+    }
+    list->ent = readdir(list->dir);
+    if (list->ent == NULL) {
+        list->started = false;
+        avStringFree(&list->path);
+        return;
+    }
+    list->started = true;
+    createContent(
+        content,
+        AV_CSTR(list->ent->d_name),
+        pathGetType(list->path));
+}
+static bool32 getNextEntry(Content *content, ContentList *list){
+    avAssert(list->started, "list must be started first");
+    destroyContent(content);
+    list->ent = readdir(list->dir);
+    if(list->ent == NULL){
+        return false;
+    }
+    createContent(
+        content,
+        AV_CSTR(list->ent->d_name),
+        pathGetType(list->path));
+    return true;
+}
+static void endContentList(Content *content, ContentList *list){
+    destroyContent(content);
+
+    if (list->started == false) {
+        return;
+    }
+    closedir(list->dir);
+    avStringFree(&list->path);
+    list->started = false;
+    list->dir = 0;
+}
 
 #endif
