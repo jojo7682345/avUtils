@@ -7,6 +7,7 @@
 #include <AvUtils/string/avPath.h>
 #include <AvUtils/avFileSystem.h>
 #include <AvUtils/avProcess.h>
+#include <AvUtils/avBuilder.h>
 
 
 #include <stdio.h>
@@ -336,6 +337,14 @@ void testProcess() {
 
 }
 
+void testBuild(){
+	if(avCompileBuildFile(AV_CSTR("./avUtilsBuild.cbuild"))!=AV_PARSE_RESULT_SUCCESS){
+		printf("compiling failed\n");
+	}else{
+		printf("compiled successfully\n");
+	}
+}
+
 int main() {
 	avStringDebugContextStart;
 
@@ -347,6 +356,7 @@ int main() {
 	testString();
 	testPath("/");
 
+	testBuild();
 	//testProcess();
 	printf("test completed\n");
 	avStringDebugContextEnd;

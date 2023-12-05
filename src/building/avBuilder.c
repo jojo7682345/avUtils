@@ -1,6 +1,7 @@
 #include <AvUtils/avBuilder.h>
 #include <AvUtils/dataStructures/avDynamicArray.h>
 #include <AvUtils/avLogging.h>
+#include <stdio.h>
 
 typedef struct Configuration {
     AvString str;
@@ -19,6 +20,8 @@ void printHelp(){
 
     
 }
+
+__attribute__((weak)) void avBuildSetup() {}
 
 int main(int argC, const char *argV[]){
     avBuildSetup();

@@ -1,12 +1,12 @@
 #include <AvUtils/avBuilder.h>
 
-void all() {
+bool32 all() {
 
 
 
 }
 
-void clean(){
+bool32 clean(){
 
 }
 
