@@ -97,9 +97,9 @@ static void processPath(AvStringRef dst, AvString src) {
         avStringMemoryStore(AV_CSTR("/"), writeIndex++, 1, memory);
     }
     avStringMemoryStore(AV_CSTR("*"), writeIndex++, 1, memory);
-    if(memory->capacity-2 == 0){
+    if (memory->capacity - 2 == 0) {
         avStringFromMemory(dst, 0, memory->capacity - 1, memory);
-    }else{
+    } else {
         avStringFromMemory(dst, 0, memory->capacity - 2, memory);
     }
     //printf("stored\n");
@@ -154,7 +154,7 @@ bool32 avPathGetDirectoryContents(AvPathRef path) {
 
 
         AvString fullPath = AV_EMPTY;
-        avStringJoin(&fullPath, path->path, AV_CSTR("/"), content.name);
+        avStringJoin(&fullPath, path->path, AV_CSTR((path->path.chrs[path->path.len-1]=='/' ? "" : "/")), content.name);
         if (pathGetType(fullPath) == AV_PATH_TYPE_UNKNOWN) {
             avStringFree(&fullPath);
             continue;
@@ -287,7 +287,7 @@ static bool32 getNextEntry(Content* content, ContentList* list) {
 
 #else
 
-static AvPathType pathGetType(AvString str){
+static AvPathType pathGetType(AvString str) {
     AvString path = AV_EMPTY;
     avStringClone(&path, str);
 
@@ -300,8 +300,7 @@ static AvPathType pathGetType(AvString str){
         type = AV_PATH_TYPE_UNKNOWN;
         return type;
     }
-    if ((buffer.st_mode & S_IFDIR) != 0)
-    {
+    if ((buffer.st_mode & S_IFDIR) != 0) {
         type = AV_PATH_TYPE_DIRECTORY;
         avStringFree(&path);
         return type;
@@ -312,10 +311,10 @@ static AvPathType pathGetType(AvString str){
     return type;
 }
 
-static void startContentList(AvPathRef path, Content *content, ContentList *list){
+static void startContentList(AvPathRef path, Content* content, ContentList* list) {
     avStringClone(&list->path, path->path);
     list->dir = opendir(list->path.chrs);
-    if(list->dir == NULL){
+    if (list->dir == NULL) {
         list->started = false;
         avStringFree(&list->path);
         return;
@@ -332,11 +331,11 @@ static void startContentList(AvPathRef path, Content *content, ContentList *list
         AV_CSTR(list->ent->d_name),
         pathGetType(list->path));
 }
-static bool32 getNextEntry(Content *content, ContentList *list){
+static bool32 getNextEntry(Content* content, ContentList* list) {
     avAssert(list->started, "list must be started first");
     destroyContent(content);
     list->ent = readdir(list->dir);
-    if(list->ent == NULL){
+    if (list->ent == NULL) {
         return false;
     }
     createContent(
@@ -345,7 +344,7 @@ static bool32 getNextEntry(Content *content, ContentList *list){
         pathGetType(list->path));
     return true;
 }
-static void endContentList(Content *content, ContentList *list){
+static void endContentList(Content* content, ContentList* list) {
     destroyContent(content);
 
     if (list->started == false) {
