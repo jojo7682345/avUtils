@@ -542,7 +542,7 @@ uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvStrin
 		strOffset offset = avStringFindFirstOccuranceOf(
 			remainingStr,
 			sequence
-		);
+		)-1;
 		avStringMemoryStore(remainingStr, writeIndex, offset, memory);
 		readIndex += offset;
 		writeIndex += offset;
