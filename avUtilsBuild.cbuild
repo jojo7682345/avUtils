@@ -1,16 +1,1 @@
-#include <AvUtils/avBuilder.h>
-
-bool32 all() {
-
-
-
-}
-
-bool32 clean(){
-
-}
-
-void avBuildSetup(){
-    avBuildRegisterConfiguration(AV_CSTR("all"), &all);
-    avBuildRegisterConfiguration(AV_CSTR("clean"), &clean);
-}
+2 + 4 * (3 + 2);
