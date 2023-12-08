@@ -8,16 +8,6 @@ avUtils {
 		include
 	]
 }
-avUtils {
-	type: DLL
-	flags: -std=c11 -Wpedantic -ggdb -fPIC
-	source: [
-		src
-	]
-	include: [
-		include
-	]
-}
 avUtilsTest {
 	type: EXE 
 	flags: -std=c11 -Wall -ggdb -Wl,-rpath,./lib
