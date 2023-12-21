@@ -60,5 +60,11 @@ uint32 avGridGetWidth(AvGrid grid);
 uint32 avGridGetHeight(AvGrid grid);
 uint64 avGridGetElementSize(AvGrid grid);
 
+void avGridWriteGrid(AvGrid src, uint32 x, uint32 y, uint32 width, uint32 height, AvGrid dst);
+
+
+
+void avGridFindMinRectSurrounding(void* data, uint32* xMin, uint32* yMin, uint32* xMax, uint32* yMax, AvGrid grid);
+
 C_SYMBOLS_END
 #endif//__AV_GRID__

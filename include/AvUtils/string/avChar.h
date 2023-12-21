@@ -17,5 +17,7 @@ bool32 avCharIsHexNumber(char chr);
 char avCharToLowercase(char chr);
 char avCharToUppercase(char chr);
 
+bool32 avCharEqualsCaseInsensitive(char chrA, char chrB);
+
 C_SYMBOLS_END
 #endif//__AV_CHAR__

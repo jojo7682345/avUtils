@@ -27,3 +27,7 @@ char avCharToLowercase(char chr){
 char avCharToUppercase(char chr) {
     return avCharIsLowercaseLetter(chr) ? chr - ('a' - 'A') : chr;
 }
+
+bool32 avCharEqualsCaseInsensitive(char chrA, char chrB){
+    return avCharToUppercase(chrA) == avCharToUppercase(chrB);
+}

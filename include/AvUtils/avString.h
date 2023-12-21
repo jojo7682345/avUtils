@@ -40,6 +40,8 @@ typedef AvString* AvStringRef;
 /// @brief create a string from a exisitng const char*
 #define AV_CSTR(str) AV_STR(str, avCStringLength(str)) 
 
+#define AV_CSTRA(str) AV_STR(str, sizeof(str)/sizeof(char)-1)
+
 void avStringClone(AvStringRef dst, AvString src);
 void avStringMove(AvStringRef dst, AvStringRef src);
 
@@ -112,6 +114,9 @@ strOffset avStringFindLastOccuranceOf(AvString str, AvString find);
 strOffset avStringFindFirstOccuranceOf(AvString str, AvString find);
 uint64 avStringFindCount(AvString str, AvString find);
 
+bool32 avStringContainsChar(AvString str, char chr) ;
+bool32 avStringContains(AvString str, AvString sequence);
+
 bool32 avStringEndsWith(AvString str, AvString sequence);
 bool32 avStringStartsWith(AvString str, AvString sequence);
 
@@ -126,6 +131,7 @@ void avStringToLowercase(AvStringRef str);
 
 bool32 avStringEquals(AvString strA, AvString strB);
 int32 avStringCompare(AvString strA, AvString strB);
+bool32 avStringEqualsCaseInsensitive(AvString strA, AvString strB);
 
 void avStringReplaceChar(AvStringRef str, char original, char replacement);
 uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvString replacement);
@@ -144,8 +150,12 @@ void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
-uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, AvString str);
+uint32 avStringScanf(AvString format, AvString str, ...);
 
+uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, AvString str);
+uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvString str);
+
+void avStringFlip(AvStringRef str);
 
 C_SYMBOLS_END
 #endif//__AV_STRING__

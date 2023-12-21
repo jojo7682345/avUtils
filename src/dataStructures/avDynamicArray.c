@@ -26,6 +26,8 @@ typedef struct AvDynamicArray_T {
 	uint32 count;
 	uint32 capacity;
 
+	bool8 allowRelocation;
+
 	AvDeallocateElementCallback deallocElement;
 } AvDynamicArray_T;
 
@@ -90,6 +92,8 @@ static void removePage(Page* page, AvDynamicArray dynamicArray) {
 
 static void resizePage(Page* page, uint32 capacity, AvDynamicArray dynamicArray) {
 
+	avAssert(dynamicArray->allowRelocation==true, "trying to reallocate dynamic array while not allowed");
+
 	if (capacity == 0) {
 		removePage(page, dynamicArray);
 		return;
@@ -121,7 +125,15 @@ bool32 avDynamicArrayCreate(uint32 initialSize, uint64 dataSize, AvDynamicArray*
 	(*dynamicArray)->capacity = 0;
 	(*dynamicArray)->data = addPage(initialSize, *dynamicArray);
 	(*dynamicArray)->deallocElement = nullptr;
+	(*dynamicArray)->allowRelocation = true;
 	return 1;
+}
+
+void avDynamicArraySetAllowRelocation(bool32 allowRelocation, AvDynamicArray dynamicArray){
+	dynamicArray->allowRelocation = allowRelocation;
+}
+bool32 avDynamicArrayGetAllowRelocation(AvDynamicArray dynamicArray){
+	return (bool32)dynamicArray->allowRelocation;
 }
 
 static void* getPtr(Page* page, uint32 index, AvDynamicArray dynamicArray) {
@@ -219,6 +231,8 @@ bool32 avDynamicArrayRead(void* data, uint32 index, AvDynamicArray dynamicArray)
 }
 
 bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
+	avAssert(dynamicArray->allowRelocation==true, "removing elements while relocation is not allowed");
+
 	if (index >= dynamicArray->count) {
 		return false;
 	}
@@ -353,6 +367,8 @@ uint64 avDynamicArrayGetDataSize(AvDynamicArray dynamicArray) {
 
 void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 
+	avAssert(dynamicArray->allowRelocation==true, "trying to trim dynamic array while relocation is not allowed");
+
 	Page* page = dynamicArray->lastPage;
 	while (page) {
 		if (page->count == page->capacity) {
@@ -367,6 +383,17 @@ void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 			return;
 		}
 	}
+}
+
+bool32 avDynamicArrayContains(void* data, AvDynamicArray dynamicArray){
+	for(uint32 i = 0; i < dynamicArray->count; i++){
+		uint32 index = i;
+		Page* page = getPage(&index, dynamicArray);
+		if(memcmp(data, getPtr(page, index, dynamicArray), dynamicArray->dataSize)==0){
+			return true;
+		}
+	}
+	return false;
 }
 
 void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray) {

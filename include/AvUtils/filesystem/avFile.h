@@ -28,13 +28,13 @@ typedef enum AvFileStatus {
 	AV_FILE_STATUS_OPEN_UPDATE = 0x8,
 } AvFileStatus;
 
-typedef enum AvFileOpenMode{
+typedef enum AvFileOpenMode {
 	AV_FILE_OPEN_WRITE = 0,
 	AV_FILE_OPEN_READ = 0x1,
 	AV_FILE_OPEN_APPEND = 0x2,
 }AvFileOpenMode;
 
-typedef struct AvFileOpenOptions{
+typedef struct AvFileOpenOptions {
 	byte openMode;
 	bool8 update;
 	bool8 binary;
@@ -67,6 +67,13 @@ AvDateTime avFileGetCreationTime(AvFile file);
 AvDateTime avFileGetAccessedTime(AvFile file);
 AvDateTime avFileGetModifiedTime(AvFile file);
 AvFileStatus avFileGetStatus(AvFile file);
+
+#define AV_FILE_OPEN_READ_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_READ, .binary=false, .update=false}
+#define AV_FILE_OPEN_READ_BINARY_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_READ, .binary=true, .update=false}
+
+
+#define AV_FILE_OPEN_WRITE_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_WRITE, .binary=false, .update=false}
+#define AV_FILE_OPEN_WRITE_BINARY_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_WRITE, .binary=true, .update=false}
 
 bool32 avFileOpen(AvFile file, AvFileOpenOptions mode);
 

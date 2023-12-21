@@ -1,8 +1,8 @@
 #ifndef __AV_DYNAMIC_ARRAY__
 #define __AV_DYNAMIC_ARRAY__
 #include "../avDefinitions.h"
-C_SYMBOLS_START
 
+C_SYMBOLS_START
 
 #include "../avTypes.h"
 
@@ -48,6 +48,11 @@ uint64 avDynamicArrayGetDataSize(AvDynamicArray dynamicArray);
 void avDynamicArrayTrim(AvDynamicArray dynamicArray);
 void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray);
 
+bool32 avDynamicArrayContains(void* data, AvDynamicArray dynamicArray);
+
+void avDynamicArraySetAllowRelocation(bool32 allowRelocation, AvDynamicArray dynamicArray);
+bool32 avDynamicArrayGetAllowRelocation(AvDynamicArray dynamicArray);
+
 /// <summary>
 /// Appends the source array to the destination array. Transfers ownership of all the data within the source array.
 /// The source array is practically destroyed after calling this function.
@@ -59,10 +64,12 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
 void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
 
 #define avDynamicArrayForEachElement(type, dynamicArray, code) for(uint32 index = 0; index < avDynamicArrayGetSize(dynamicArray); index++) { type element; avDynamicArrayRead(&element, index, (dynamicArray)); code }
-
+C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ARRAY__
 
 #ifdef AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
+C_SYMBOLS_START
+
 #ifndef __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
 #define __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
 
@@ -76,7 +83,9 @@ uint64 avDynamicArrayGetPageDataSize(uint32 pageNum, AvDynamicArray dynamicArray
 uint32 avDynamicArrayGetIndexPage(uint32* index, AvDynamicArray dynamicArray);
 void* avDynamicArrayGetPtr(uint32 index, AvDynamicArray dynamicArray);
 
-#endif//__AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
 
 C_SYMBOLS_END
+#endif//__AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
+
+
 #endif
