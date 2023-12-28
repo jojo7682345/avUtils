@@ -11,29 +11,6 @@
 #include "avInterpreter.h"
 #include "avSyntaxTree.h"
 
-
-enum { STATEMENT_TYPE_COUNTER_BASE = __COUNTER__ };
-#define STATEMENT_TYPE_LOCAL_COUNTER (__COUNTER__ - STATEMENT_TYPE_COUNTER_BASE - 1)
-#define COUNTER STATEMENT_TYPE_LOCAL_COUNTER
-typedef enum StatementType {
-    STATEMENT_TYPE_NONE = 0,
-    STATEMENT_TYPE_FUNCTION = 1 << COUNTER,
-    STATEMENT_TYPE_RETURN = 1 << COUNTER,
-    STATEMENT_TYPE_IF = 1 << COUNTER,
-    STATEMENT_TYPE_VALUE = 1 << COUNTER,
-    STATEMENT_TYPE_CALL = (1 << COUNTER) | STATEMENT_TYPE_VALUE,
-    STATEMENT_TYPE_EXPRESSION = (1 << COUNTER) | STATEMENT_TYPE_VALUE,
-    STATEMENT_TYPE_FILE = (1 << COUNTER),
-    STATEMENT_TYPE_STRING = (1 << COUNTER) | STATEMENT_TYPE_VALUE,
-
-    STATEMENT_TYPE_All = (-1)
-} StatementType;
-#undef COUNTER
-
-static void checkSyntax(int a, ...){
-    
-}
-
 AvCompileData createCompileData() {
     return avCallocate(1, sizeof(AvCompileData_T), "allocating compiledata");
 }
@@ -59,12 +36,11 @@ AvParseResult avCompileBuildFile(AvString fileName) {
     avFileRead(memory.data, memory.capacity, file);
     avFileClose(file);
 
-    AvString unprocessedFileData = AV_EMPTY;
+    //AvString unprocessedFileData = AV_EMPTY;
+    
     AvString fileData = AV_EMPTY;
     
-    avStringFromMemory(&unprocessedFileData, AV_STRING_WHOLE_MEMORY, &memory);
-    avStringReplace(&fileData, unprocessedFileData, AV_CSTR("\r\n"), AV_CSTR("\n"));
-    avStringFree(&unprocessedFileData);
+    avStringFromMemory(&fileData, AV_STRING_WHOLE_MEMORY, &memory);
 
     if (avTokenize(fileData, data) != AV_PARSE_RESULT_SUCCESS) {
         result = AV_PARSE_RESULT_ERROR;

@@ -23,6 +23,7 @@ void printHelp(){
 
 __attribute__((weak)) void avBuildSetup() {}
 
+/*
 int main(int argC, const char *argV[]){
     avBuildSetup();
     argC--;
@@ -45,4 +46,4 @@ int main(int argC, const char *argV[]){
             return -1;
         }
     }
-}
+}*/

@@ -1,1 +1,12 @@
-2 + 4 * (3 + 2);
+extern int a = 0xff;
+
+typedef struct {
+    int a;
+    int b;
+} Test;
+
+int function(){
+    -a;
+    function(3 + 4, a);
+    return a;
+}

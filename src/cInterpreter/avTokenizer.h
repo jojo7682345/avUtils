@@ -28,6 +28,7 @@ C_SYMBOLS_START
     KEYWORD(STRUCT,"struct")\
     KEYWORD(ELSE,"else")\
     KEYWORD(ENUM,"enum")\
+    KEYWORD(UNION, "union")\
     KEYWORD(TYPEDEF,"typedef")\
     KEYWORD(WHILE,"while")\
     KEYWORD(FOR,"for")\
@@ -35,6 +36,14 @@ C_SYMBOLS_START
     KEYWORD(CASE,"case")\
     KEYWORD(DEFAULT,"default")\
     KEYWORD(RETURN, "return")\
+    KEYWORD(EXTERN, "extern")\
+    KEYWORD(STATIC, "static")\
+    KEYWORD(VOLATILE, "volatile")\
+    KEYWORD(LONG, "long")\
+    KEYWORD(SHORT, "short")\
+    KEYWORD(SIGNED, "signed")\
+    KEYWORD(UNSIGNED, "unsigned")\
+    KEYWORD(RESTRICT, "restrict")\
 
 #define SPECIAL_LIST \
     SPECIAL(SQUARE_BRACKET_OPEN,"[")\
@@ -85,6 +94,14 @@ C_SYMBOLS_START
     OPERATOR(BITWISE_XOR_ASSIGN, "^=")\
     OPERATOR(BITWISE_OR_ASSIGN, "|=")\
     OPERATOR(BITWISE_NOT_ASSIGN, "~=")\
+
+#define DEFAULT_TYPELIST \
+    TYPEDEF(INT, "int") \
+    TYPEDEF(SHORT, "short") \
+    TYPEDEF(LONG, "long") \
+    TYPEDEF(FLOAT, "float") \
+    TYPEDEF(DOUBLE, "double") \
+    TYPEDEF(VOID, "void") \
 
 typedef enum TokenOpType {
     MATCH,
@@ -174,6 +191,9 @@ extern const TokenFormat tokenFormats[];
 extern const uint32 tokenFormatCount;
 
 extern AvString operatorStrs[];
+
+extern AvString defaultTypedefs[] ;
+extern const uint32 defaultTypedefCount;
 
 AvParseResult avTokenize(AvString file, AvCompileData data);
 

@@ -39,6 +39,9 @@ static bool32 isValidToken(TokenType type, AvString prev, char chr) {
             if (prev.len >= avCStringLength(format.values[i])) {
                 continue;
             }
+            if(!avStringEquals(prev, AV_STR(format.values[i],prev.len))){
+                continue;
+            }
             if (format.values[i][prev.len] != chr) {
                 continue;
             }
@@ -117,9 +120,11 @@ static bool32 isValidToken(TokenType type, AvString prev, char chr) {
                 }
             }
             switch (chr) {
-            case '\r':
             case '\n':
                 if (prev.chrs[prev.len - 1] == '\\') {
+                    return true;
+                }
+                if (prev.chrs[prev.len - 1] == '\r' && prev.len >= 2 && prev.chrs[prev.len - 2] == '\\') {
                     return true;
                 }
             case '\f':
@@ -134,6 +139,7 @@ static bool32 isValidToken(TokenType type, AvString prev, char chr) {
         }
         return false;
     }
+    return false;
 }
 static TokenType findTokenType(TokenType possibleTokens, AvString prev, char chr) {
     if (possibleTokens == TOKEN_NONE) {
@@ -158,6 +164,34 @@ static TokenType findTokenType(TokenType possibleTokens, AvString prev, char chr
     }
     return possibleTokens;
 
+}
+
+static void buildToken(TokenType* tokenType, const char* chrs, uint64* startToken, uint64 endToken, AvDynamicArray tokens, uint64* index){
+    uint32 bit = 0;
+    switch (*tokenType) {
+    default:
+    {
+        while (((*tokenType >> bit) & 1) == 0) {
+            bit++;
+        }
+        Token token = {
+            .type = 1 << bit,
+            .str = {
+                .chrs = chrs + *startToken,
+                .len = endToken - *startToken,
+                .memory = nullptr,
+            }
+        };
+        avDynamicArrayAdd(&token, tokens);
+    }
+    case TOKEN_NEWLINE:
+        *tokenType = TOKEN_NONE;
+        *startToken = *index;
+        (*index)--;
+        return;
+    case TOKEN_NONE:
+        return;
+    }
 }
 
 AvParseResult avTokenize(AvString file, AvCompileData data) {
@@ -204,31 +238,11 @@ AvParseResult avTokenize(AvString file, AvCompileData data) {
             endToken++;
             prevToken = tokenType;
         } else {
-            switch (prevToken) {
-            default:
-            {
-                bit = 0;
-                while (((prevToken >> bit) & 1) == 0) {
-                    bit++;
-                }
-                Token token = {
-                    .type = 1 << bit,
-                    .str = {
-                        .chrs = file.chrs + startToken,
-                        .len = endToken - startToken,
-                        .memory = nullptr,
-                    }
-                };
-                avDynamicArrayAdd(&token, data->tokens);
-            }
-            case TOKEN_NEWLINE:
-                tokenType = TOKEN_NONE;
-                startToken = index;
-                index--;
-                continue;
-            }
+            buildToken(&prevToken, file.chrs, &startToken, endToken, data->tokens, &index);
         }
     }
+    uint64 lastIndex = file.len;
+    buildToken(&prevToken, file.chrs, &startToken, endToken, data->tokens, &lastIndex);
 
     for (uint32 index = 0; index < avDynamicArrayGetSize(data->tokens); index++) {
         Token element; avDynamicArrayRead(&element, index, (data->tokens));
@@ -243,6 +257,15 @@ AvParseResult avTokenize(AvString file, AvCompileData data) {
 
     return AV_PARSE_RESULT_SUCCESS;
 }
+
+
+#define TYPEDEF(name, str) {.chrs=str, .len=sizeof(str)/sizeof(char)-1,.memory=nullptr},
+AvString defaultTypedefs[] = {
+    DEFAULT_TYPELIST
+};
+const uint32 defaultTypedefCount = sizeof(defaultTypedefs) / sizeof(AvString);
+#undef TYPEDEF
+
 #define PRE_PROCESSOR(name, str) {.chrs=str,.len=sizeof(str)/sizeof(char)-1, .memory=AV_STRING_CONST},
 AvString preprocessorStrs[] = {
     PRE_PROCESSOR_LIST
@@ -272,6 +295,8 @@ const uint32 operatorStrCount = sizeof(operatorStrs) / sizeof(AvString);
 
 TokenValueType tokenGetType(Token token) {
     switch (token.type) {
+    case TOKEN_NONE:
+        return TOKEN_VALUE_TYPE_NONE;
     case TOKEN_IDENTIFIER:
         return TOKEN_VALUE_TYPE_IDENTIFIER;
     case TOKEN_STRING:
@@ -282,7 +307,7 @@ TokenValueType tokenGetType(Token token) {
     case TOKEN_PRE_PROCESSOR:
         for (uint32 i = 0; i < preprocessorStrCount; i++) {
             if (avStringEquals(token.str, preprocessorStrs[i])) {
-                return TOKEN_VALUE__PRE_PROCESSOR + i + 1;
+                return TOKEN_VALUE__PRE_PROCESSOR + ((i + 1) << 4);
             }
         }
         avAssert(token.type == 0, "token invalid");
@@ -290,7 +315,7 @@ TokenValueType tokenGetType(Token token) {
     case TOKEN_KEYWORD:
         for (uint32 i = 0; i < keywordStrCount; i++) {
             if (avStringEquals(token.str, keywordStrs[i])) {
-                return TOKEN_VALUE__KEYWORD + i + 1;
+                return TOKEN_VALUE__KEYWORD + ((i + 1) << 4);
             }
         }
         avAssert(token.type == 0, "token invalid");
@@ -298,7 +323,7 @@ TokenValueType tokenGetType(Token token) {
     case TOKEN_SPECIAL:
         for (uint32 i = 0; i < specialStrCount; i++) {
             if (avStringEquals(token.str, specialStrs[i])) {
-                return TOKEN_VALUE__SPECIAL + i + 1;
+                return TOKEN_VALUE__SPECIAL + ((i + 1) << 4);
             }
         }
         avAssert(token.type == 0, "token invalid");
@@ -306,7 +331,8 @@ TokenValueType tokenGetType(Token token) {
     case TOKEN_OPERATOR:
         for (uint32 i = 0; i < operatorStrCount; i++) {
             if (avStringEquals(token.str, operatorStrs[i])) {
-                return TOKEN_VALUE__OPERATOR + i + 1;
+
+                return TOKEN_VALUE__OPERATOR + ((i + 1) << 4);
             }
         }
         avAssert(token.type == 0, "token invalid");
