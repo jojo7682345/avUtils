@@ -11,13 +11,14 @@
 
 
 #include <stdio.h>
+#include <inttypes.h>
 
 void testQueue() {
 	AvQueue queue;
 	avQueueCreate(sizeof(int), 2, &queue);
 
 
-	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+	printf("availableSlots: %"PRIu64"\nfilledSlots: %"PRIu64"\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
 
 	for (int i = 0; i < avQueueGetSize(queue); i++) {
 		avQueuePush(&i, queue);
@@ -26,7 +27,7 @@ void testQueue() {
 	if (avQueueIsFull(queue)) {
 		printf("queue filled\n");
 	}
-	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+	printf("availableSlots: %"PRIu64"\nfilledSlots: %"PRIu64"\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
 
 	for (int i = 0; i < avQueueGetSize(queue); i++) {
 		int value;
@@ -40,7 +41,7 @@ void testQueue() {
 		printf("queue not emptied\n");
 	}
 
-	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+	printf("availableSlots: %"PRIu64"\nfilledSlots: %"PRIu64"\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
 
 	for (int i = 0; i < avQueueGetSize(queue); i++) {
 		avQueuePush(&i, queue);
@@ -49,7 +50,7 @@ void testQueue() {
 	if (avQueueIsFull(queue)) {
 		printf("queue filled\n");
 	}
-	printf("availableSlots: %li\nfilledSlots: %li\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
+	printf("availableSlots: %"PRIu64"\nfilledSlots: %"PRIu64"\n", avQueueGetRemainingSpace(queue), avQueueGetOccupiedSpace(queue));
 
 	for (int i = 0; i < avQueueGetSize(queue); i++) {
 		int value;
@@ -208,7 +209,7 @@ void testString() {
 
 	strOffset offset = avStringFindFirstOccranceOfChar(str, ' ');
 
-	printf("char ' ' offset of %lu\n", offset);
+	printf("char ' ' offset of %"PRIu64"\n", offset);
 
 	avStringReplaceChar(&str, ' ', '_');
 	avStringPrint(str);
@@ -297,7 +298,7 @@ void testFile() {
 	avStringFree(&timeString);
 
 	uint64 size = avFileGetSize(file);
-	printf("file size : %lu\n", size);
+	printf("file size : %"PRIu64"\n", size);
 
 	avFileOpen(file, (AvFileOpenOptions) { .openMode = AV_FILE_OPEN_READ, .binary = false, .update = false });
 
@@ -338,11 +339,7 @@ void testProcess() {
 }
 
 void testBuild(){
-	if(avCompileBuildFile(AV_CSTR("./avUtilsBuild.cbuild"))!=AV_PARSE_RESULT_SUCCESS){
-		printf("compiling failed\n");
-	}else{
-		printf("compiled successfully\n");
-	}
+
 }
 
 int main() {

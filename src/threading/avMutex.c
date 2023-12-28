@@ -48,7 +48,7 @@ void avMutexUnlock(AvMutex mutex) {
 static bool32 createMutex(AvMutex mutex) {
 	(mutex)->mutexHandle = CreateMutex(NULL, FALSE, NULL);
 	if ((mutex)->mutexHandle == NULL) {
-		printf("CreateMutex error: %d\n", GetLastError());
+		printf("CreateMutex error: %ld\n", GetLastError());
 		return false;
 	}
 	return true;

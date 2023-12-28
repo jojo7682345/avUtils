@@ -19,9 +19,9 @@
 #endif
 
 static AvPathType pathGetType(AvString str);
-static bool32 directoryExists(AvString str) {
-    return pathGetType(str) == AV_PATH_TYPE_DIRECTORY;
-}
+// static bool32 directoryExists(AvString str) {
+//     return pathGetType(str) == AV_PATH_TYPE_DIRECTORY;
+// }
 
 typedef struct Content {
     AvPathType type;

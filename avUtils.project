@@ -1,6 +1,6 @@
 avUtils {
 	type: LIB
-	flags: -std=c11 -Wpedantic -ggdb -fPIC
+	flags: -std=c11 -Wall -ggdb -fPIC
 	source: [
 		src
 	]

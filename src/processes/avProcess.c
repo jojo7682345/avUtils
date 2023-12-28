@@ -85,8 +85,7 @@ static LPSTR GetLastErrorAsString(void) {
 
     LPSTR messageBuffer = NULL;
 
-    DWORD size =
-        FormatMessage(
+    FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
             NULL, // LPCVOID lpSource,
             errorMessageId, // DWORD   dwMessageId,
@@ -128,7 +127,7 @@ static bool32 executeProcess(AvString cmd, AvProcess process) {
     );
     if (!bSuccess) {
         printf("Could not create child process %s: %s\n",
-              cmd, GetLastErrorAsString());
+              cmd.chrs, GetLastErrorAsString());
         return false;
     }
     CloseHandle(process->piProcInfo.hThread);

@@ -42,6 +42,7 @@ bool32 avArrayWrite(void* data, uint32 index, AvArrayRef array){
         return 0;
     }
     memcpy(getPtr(index, array), data, array->elementSize);
+    return true;
 }
 bool32 avArrayRead(void* data, uint32 index, AvArrayRef array){
     avAssert(data != nullptr, "data must be a valid pointer");
@@ -50,6 +51,7 @@ bool32 avArrayRead(void* data, uint32 index, AvArrayRef array){
         return 0;
     }
     memcpy(data, getPtr(index, array), array->elementSize);
+    return true;
 }
 void* avArrayGetPtr(uint32 index, AvArrayRef array){
     avAssert(array->allocatedSize != 0, "array must be allocated first");

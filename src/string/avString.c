@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #define NULL_TERMINATOR_SIZE 1
 
@@ -97,7 +98,7 @@ void avStringShift(AvStringRef str, uint64 newOffset) {
 		avAssert(newOffset < str->memory->capacity, "offset must not fall outside the capacity");
 		return;
 	}
-	uint64 prevOffset = str->chrs - str->memory->data;
+
 	uint64 newLength = AV_MIN(newOffset + str->len, str->memory->capacity) - newOffset;
 	avStringResize(str, newLength);
 	char* newChrs = str->memory->data + newOffset;
@@ -309,7 +310,7 @@ void avStringDebugContextEnd_() {
 		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
-		printf("allocated string memory containing \"%.*s\" has not been freed: %i remaining references\n", stringMemory->capacity, stringMemory->data, stringMemory->referenceCount);
+		printf("allocated string memory containing \"%.*s\" has not been freed: %"PRIu64" remaining references\n", (uint32)stringMemory->capacity, stringMemory->data, stringMemory->referenceCount);
 	}
 	avDynamicArrayDestroy(debugContext->allocatedMemory);
 
@@ -337,11 +338,11 @@ strOffset avStringFindFirstOccranceOfChar(AvString str, char chr) {
 	return AV_STRING_NULL;
 }
 
-bool32 avStringContainsChar(AvString str, char chr){
-	return (avStringFindCharCount(str,chr)!=0);
+bool32 avStringContainsChar(AvString str, char chr) {
+	return (avStringFindCharCount(str, chr) != 0);
 }
 
-bool32 avStringContains(AvString str, AvString sequence){
+bool32 avStringContains(AvString str, AvString sequence) {
 	return avStringFindCount(str, sequence) != 0;
 }
 
@@ -448,7 +449,7 @@ bool32 avStringWrite(AvStringRef str, strOffset offset, char chr) {
 		avStringClone(str, *str);
 	}
 	str->memory->data[offset] = chr;
-
+	return true;
 }
 char avStringRead(AvString str, strOffset offset) {
 	if (str.len == 0) {
@@ -504,6 +505,7 @@ bool32 avStringEqualsCaseInsensitive(AvString strA, AvString strB) {
 			return false;
 		}
 	}
+	return true;
 }
 
 int32 avStringCompare(AvString strA, AvString strB) {
@@ -643,7 +645,7 @@ void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef memory, ...) {
 	va_list list;
 	va_start(list, memory);
 	const char* arg = NULL;
-	while (arg = va_arg(list, const char*)) {
+	while ((arg = va_arg(list, const char*)) != nullptr) {
 		avDynamicArrayAdd(&arg, arr);
 	}
 	va_end(list);
@@ -669,11 +671,11 @@ void avStringMemoryStoreCharArrays(AvStringMemoryRef memory, uint32 count, const
 }
 
 void avStringPrint(AvString str) {
-	printf("%.*s", str.len, str.chrs);
+	printf("%.*s", (uint32)str.len, str.chrs);
 }
 
 void avStringPrintData(AvString str) {
-	printf("{ .chrs=%.*s, .len=%lu .memory=0x%p }\n", str.len, str.chrs, str.len, str.memory);
+	printf("{ .chrs=%.*s, .len=%"PRIu64" .memory=0x%p }\n", (uint32)str.len, str.chrs, str.len, str.memory);
 }
 
 void avStringPrintLn(AvString str) {
@@ -772,7 +774,6 @@ uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString) substrings, char split, A
 	uint splitCount = split == '\0' ? str.len : avStringFindCharCount(str, split);
 	avArrayAllocateWithFreeCallback(splitCount + 1, sizeof(AvString), substrings, false, nullptr, (AvDestroyElementCallback)&avStringFree);
 	if (splitCount == 0) {
-		AvString tmpStr = { 0 };
 		avStringCopy(avArrayGetPtr(0, substrings), str);
 		return 1;
 	}
@@ -802,7 +803,6 @@ uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvS
 	uint splitCount = split.len == 0 ? str.len : avStringFindCount(str, split);
 	avArrayAllocateWithFreeCallback(splitCount + 1, sizeof(AvString), substrings, false, nullptr, (AvDestroyElementCallback)&avStringFree);
 	if (splitCount == 0) {
-		AvString tmpStr = { 0 };
 		avStringCopy(avArrayGetPtr(0, substrings), str);
 		return 1;
 	}

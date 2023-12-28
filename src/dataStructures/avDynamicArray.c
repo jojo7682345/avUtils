@@ -259,6 +259,7 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 		page->count--;
 		dynamicArray->count--;
 	}
+	return true;
 }
 
 static void clearPage(Page* page, void* data, AvDynamicArray dynamicArray) {
@@ -437,7 +438,7 @@ static Page* clonePage(Page* src, uint64 dataSize) {
 	Page* page = createPage(src->capacity, dataSize);
 	memcpy(page->data, src->data, (uint64)src->capacity * dataSize);
 	page->count = src->count;
-	
+	return page;
 }
 
 void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray) {
@@ -539,7 +540,7 @@ uint32 avDynamicArrayGetIndexPage(uint32* index, AvDynamicArray dynamicArray) {
 		if (tmpPage == page) {
 			return pageIndex;
 		}
-		if (tmpPage = dynamicArray->lastPage) {
+		if (tmpPage == dynamicArray->lastPage) {
 			return AV_DYNAMIC_ARRAY_INVALID_PAGE;
 		}
 		pageIndex++;
