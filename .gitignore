@@ -27,3 +27,5 @@ avBuild.*
 .obsidian
 
 CppProperties.json
+
+.clangd
