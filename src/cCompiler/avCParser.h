@@ -1,3 +1,4 @@
 #include "avCLanguage.h"
+#include "avCLexer.h"
 
-struct TranslationUnit parseTranslationUnit(AvString file);
+struct TranslationUnit parseTokenList(TokenList file);

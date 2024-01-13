@@ -1,3 +1,6 @@
+#ifndef __AV_C_LANGUAGE__
+#define __AV_C_LANGUAGE__
+
 #include <AvUtils/avString.h>
 
 enum TokenType {
@@ -157,6 +160,10 @@ struct FractionalConstant {
     AvString fraction;
 };
 
+struct ExponentPart {
+    bool32 sign; // 1 for negative 0 for positive;
+    AvString digits;
+};
 
 enum FloatingSuffix {
     FLOATING_SUFFIX_DOUBLE = 0,
@@ -165,7 +172,7 @@ enum FloatingSuffix {
 
 struct FloatingConstant {
     struct FractionalConstant fractionalConstant;
-    struct ExponentPart* exponentPart;
+    struct ExponentPart exponentPart;
     enum FloatingSuffix floatingSuffix;
 };
 
@@ -239,11 +246,6 @@ struct PreprocessorToken {
         enum Punctuator punctuator;
         AvString str;
     };
-};
-
-struct ExponentPart {
-    bool32 sign; // 1 for negative 0 for positive;
-    AvString digits;
 };
 
 enum CharacterSpecifier {
@@ -1028,5 +1030,5 @@ struct TranslationUnit {
     struct TranslationUnit* translationUnit;
 };
 
-
+#endif//__AV_C_LANGUAGE__
 
