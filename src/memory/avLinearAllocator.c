@@ -60,6 +60,10 @@ void avLinearAllocatorDestroy(AvLinearAllocator* allocator) {
     avLinearAllocatorReset(allocator);
 }
 
+uint64 avLinearAllocatorGetAllocatedSize(AvLinearAllocator* allocator){
+    return allocator->allocatedSize;
+}
+
 uint64 avLinearAllocatorGetRemainingSize(AvLinearAllocator allocator) {
     return allocator.allocatedSize - allocator.current;
 }

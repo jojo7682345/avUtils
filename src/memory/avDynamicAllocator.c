@@ -21,6 +21,9 @@ void* avDynamicAllocatorAllocate(uint64 size, AvDynamicAllocator* allocator) {
     return avDynamicArrayGetPageDataPtr(pageIndex, allocator->memory);
 }
 
+uint64 avDynamicAllocatorGetAllocatedSize(AvDynamicAllocator* allocator){
+    return avDynamicArrayGetSize(allocator->memory);
+}
 
 void avDynamicAllocatorReset(AvDynamicAllocator* allocator) {
     avDynamicArrayClear(nullptr, allocator->memory);

@@ -23,6 +23,8 @@ void avLinearAllocatorReset(AvLinearAllocator* allocator);
 
 void avLinearAllocatorDestroy(AvLinearAllocator* allocator);
 
+uint64 avLinearAllocatorGetAllocatedSize(AvLinearAllocator* allocator);
+
 uint64 avLinearAllocatorGetRemainingSize(AvLinearAllocator allocator);
 
 

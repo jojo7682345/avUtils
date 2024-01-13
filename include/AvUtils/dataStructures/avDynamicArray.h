@@ -64,6 +64,11 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src);
 void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
 
 #define avDynamicArrayForEachElement(type, dynamicArray, code) for(uint32 index = 0; index < avDynamicArrayGetSize(dynamicArray); index++) { type element; avDynamicArrayRead(&element, index, (dynamicArray)); code }
+
+
+
+    
+
 C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ARRAY__
 
@@ -82,7 +87,7 @@ uint64 avDynamicArrayGetPageDataSize(uint32 pageNum, AvDynamicArray dynamicArray
 #define AV_DYNAMIC_ARRAY_INVALID_PAGE ((uint32)-1)
 uint32 avDynamicArrayGetIndexPage(uint32* index, AvDynamicArray dynamicArray);
 void* avDynamicArrayGetPtr(uint32 index, AvDynamicArray dynamicArray);
-
+#define avDynamicArrayAccess(type, index, dynamicArray) ((type*)avDynamicArrayGetPtr(index, dynamicArray))
 
 C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__

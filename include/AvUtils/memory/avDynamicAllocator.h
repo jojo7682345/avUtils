@@ -13,6 +13,8 @@ void avDynamicAllocatorCreate(uint64 size, AvDynamicAllocator* allocator);
 
 void* avDynamicAllocatorAllocate(uint64 size, AvDynamicAllocator* allocator);
 
+uint64 avDynamicAllocatorGetAllocatedSize(AvDynamicAllocator* allocator);
+
 void avDynamicAllocatorReset(AvDynamicAllocator* allocator);
 
 void avDynamicAllocatorDestroy(AvDynamicAllocator* allocator);
