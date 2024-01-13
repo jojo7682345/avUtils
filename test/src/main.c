@@ -271,7 +271,11 @@ void testFile() {
 	avStringDebugContextStart;
 
 	AvString filePath = AV_EMPTY;
+#ifdef _WIN32
 	avFileBuildPathVAR("README.md", &filePath, AV_ROOT_DIR, "SDK_CCR", "avUtils");
+#else
+	avFileBuildPathVAR("README.md", &filePath, AV_ROOT_DIR, "home", "dms", "Programming", "Projects", "avUtils");
+#endif
 
 	AvFile file;
 	avFileHandleCreate(filePath, &file);
