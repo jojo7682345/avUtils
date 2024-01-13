@@ -92,8 +92,14 @@ uint64 avQueueGetElementSize(AvQueue queue) {
 }
 
 void* avQueueGetTopPtr(AvQueue queue){
+	if(avQueueIsEmpty(queue)){
+		return nullptr;
+	}
 	return getPtr(queue, queue->head + queue->length);
 }
 void* avQueueGetBottomPtr(AvQueue queue) {
+	if (avQueueIsEmpty(queue)) {
+		return nullptr;
+	}
 	return getPtr(queue, queue->head);
 }
