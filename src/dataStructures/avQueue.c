@@ -90,3 +90,7 @@ uint64 avQueueGetSize(AvQueue queue) {
 uint64 avQueueGetElementSize(AvQueue queue) {
 	return queue->elementSize;
 }
+
+void* avQueueGetTopPtr(AvQueue queue){
+	return getPtr(queue, queue->head + queue->length);
+}

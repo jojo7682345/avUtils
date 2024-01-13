@@ -78,6 +78,8 @@ uint64 avQueueGetSize(AvQueue queue);
 /// <returns></returns>
 uint64 avQueueGetElementSize(AvQueue queue);
 
+void* avQueueGetTopPtr(AvQueue queue);
+#define avQueueAccessTop(type, queue) ((type*)avQueueGetTopPtr(queue))
 
 C_SYMBOLS_END
 #endif //__AV_QUEUE__
