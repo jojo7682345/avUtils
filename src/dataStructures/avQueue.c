@@ -91,12 +91,20 @@ uint64 avQueueGetElementSize(AvQueue queue) {
 	return queue->elementSize;
 }
 
+void avQueueClone(AvQueue src, AvQueue* dst){
+	avQueueCreate(src->elementSize, src->size, dst);
+	memcpy((*dst)->data, src->data, src->size * src->elementSize);
+	(*dst)->head = src->head;
+	(*dst)->length = src->length;
+}
+
 void* avQueueGetTopPtr(AvQueue queue){
 	if(avQueueIsEmpty(queue)){
 		return nullptr;
 	}
 	return getPtr(queue, queue->head + queue->length);
 }
+
 void* avQueueGetBottomPtr(AvQueue queue) {
 	if (avQueueIsEmpty(queue)) {
 		return nullptr;
