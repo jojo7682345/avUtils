@@ -181,7 +181,9 @@ AvDateTime avFileGetModifiedTime(AvFile file) {
 }
 
 uint64 avFileGetSize(AvFile file) {
-	return *(uint64*)getFileStat(file, statProp(st_size));
+	// TODO: fix for 32 bit machines and 64 bit machines
+
+	return *(uint32*)getFileStat(file, statProp(st_size));
 }
 
 uint64 avFileRead(void* dst, uint64 size, AvFile file) {
