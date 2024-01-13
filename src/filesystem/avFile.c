@@ -41,7 +41,7 @@ void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...) {
 	va_list args;
 	va_start(args, filePath);
 	char* arg;
-	while ((arg = va_arg(args, char*))!=nullptr) {
+	while ((arg = va_arg(args, char*)) != nullptr) {
 		AvString currentArg = AV_CSTR(arg);
 		avDynamicArrayAdd(&currentArg, arr);
 	}
@@ -147,6 +147,10 @@ bool32 avFileOpen(AvFile file, AvFileOpenOptions mode) {
 		return false;
 	}
 
+	file->status =
+		(AV_FILE_STATUS_OPEN_READ * (mode.openMode == AV_FILE_OPEN_READ)) |
+		(AV_FILE_STATUS_OPEN_WRITE * (mode.openMode == AV_FILE_OPEN_WRITE))|
+		(AV_FILE_STATUS_OPEN_WRITE * (mode.openMode == AV_FILE_OPEN_APPEND));
 
 	return true;
 }
