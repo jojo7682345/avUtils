@@ -112,7 +112,7 @@ void handleWinError(LPTSTR lpszFunction) {
 
 	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
 		(lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
-	StringCchPrintf((LPTSTR)lpDisplayBuf,
+	sprintf_s((LPTSTR)lpDisplayBuf,
 		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
 		TEXT("%s failed with error %d: %s"),
 		lpszFunction, dw, lpMsgBuf);
