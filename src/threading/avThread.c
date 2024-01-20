@@ -136,6 +136,10 @@ bool8 startThread(AvThread thread) {
 		printf("failed to start thread\n");
 		return false;
 	}
+	if(threadHandle == INVALID_HANDLE_VALUE){
+		printf("invalid handle value");
+		return false;
+	}
 	thread->threadHandle = threadHandle;
 	return true;
 }
