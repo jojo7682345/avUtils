@@ -137,7 +137,7 @@ bool8 startThread(AvThread thread) {
 		printf("failed to start thread\n");
 		return false;
 	}
-	if(threadHandle == INVALID_HANDLE_VALUE){
+	if (threadHandle == INVALID_HANDLE_VALUE) {
 		printf("invalid handle value");
 		return false;
 	}
@@ -146,7 +146,13 @@ bool8 startThread(AvThread thread) {
 }
 
 uint joinThread(AvThread thread) {
+	DWORD exitCode = 0;
 	switch (WaitForSingleObject(thread->threadHandle, INFINITE)) {
+	case WAIT_OBJECT_0:
+		if (GetExitCodeThread(thread->threadHandle, &exitCode)) {
+			handleWinError(TEXT("getting thread exit code"));
+		}
+		break;
 	case WAIT_ABANDONED:
 	case WAIT_TIMEOUT:
 	case WAIT_FAILED:
@@ -154,11 +160,6 @@ uint joinThread(AvThread thread) {
 		break;
 	default:
 		break;
-	}
-
-	DWORD exitCode = 0;
-	if (GetExitCodeThread(thread->threadHandle, &exitCode)) {
-		handleWinError(TEXT("getting thread exit code"));
 	}
 
 	if (CloseHandle(thread->threadHandle)) {
@@ -199,7 +200,7 @@ uint joinThread(AvThread thread) {
 }
 
 void sleepThread(uint64 milis) {
-	usleep(milis*1000U);
+	usleep(milis * 1000U);
 }
 
 #endif
