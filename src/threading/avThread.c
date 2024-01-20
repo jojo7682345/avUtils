@@ -146,12 +146,10 @@ bool8 startThread(AvThread thread) {
 }
 
 uint joinThread(AvThread thread) {
-	DWORD exitCode = 0;
+	
 	switch (WaitForSingleObject(thread->threadHandle, INFINITE)) {
 	case WAIT_OBJECT_0:
-		if (!GetExitCodeThread(thread->threadHandle, &exitCode)) {
-			handleWinError(TEXT("getting thread exit code"));
-		}
+		
 		break;
 	case WAIT_ABANDONED:
 	case WAIT_TIMEOUT:
@@ -161,8 +159,11 @@ uint joinThread(AvThread thread) {
 	default:
 		break;
 	}
-
-	if (CloseHandle(thread->threadHandle)) {
+	DWORD exitCode = 0;
+	if (!GetExitCodeThread(thread->threadHandle, &exitCode)) {
+		handleWinError(TEXT("getting thread exit code"));
+	}
+	if (!CloseHandle(thread->threadHandle)) {
 		handleWinError(TEXT("closing thread"));
 	}
 
