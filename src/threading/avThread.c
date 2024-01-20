@@ -124,14 +124,15 @@ void handleWinError(LPTSTR lpszFunction) {
 }
 
 
-DWORD WINAPI run(LPVOID lpParam) {
+uint32 WINAPI run(void* lpParam) {
 	AvThread thread = (AvThread)lpParam;
 	uint exitCode = thread->entry(thread->buffer, thread->bufferSize);
+	_endthreadex((DWORD)exitCode);
 	return (DWORD)exitCode;
 }
 
 bool8 startThread(AvThread thread) {
-	HANDLE threadHandle = (HANDLE) CreateThread(NULL, 0,(LPTHREAD_START_ROUTINE) &run, thread, 0, &thread->threadID);
+	HANDLE threadHandle = (HANDLE)_beginthreadex(NULL, 0, &run, thread, 0, 0);
 	if (threadHandle == NULL) {
 		printf("failed to start thread\n");
 		return false;
