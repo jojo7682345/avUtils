@@ -149,7 +149,7 @@ uint joinThread(AvThread thread) {
 	DWORD exitCode = 0;
 	switch (WaitForSingleObject(thread->threadHandle, INFINITE)) {
 	case WAIT_OBJECT_0:
-		if (GetExitCodeThread(thread->threadHandle, &exitCode)) {
+		if (!GetExitCodeThread(thread->threadHandle, &exitCode)) {
 			handleWinError(TEXT("getting thread exit code"));
 		}
 		break;
