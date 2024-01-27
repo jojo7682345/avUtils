@@ -11,7 +11,7 @@ void avDynamicAllocatorCreate(uint64 size, AvDynamicAllocator* allocator) {
 }
 
 void* avDynamicAllocatorAllocate(uint64 size, AvDynamicAllocator* allocator) {
-    avAssert(size < __UINT32_MAX__, "single allocations can not exeed 32 bit size");
+    avAssert(size < (1ULL<<32), "single allocations can not exeed 32 bit size");
     avAssert(size != 0, "cannot allocate of size 0");
     avDynamicArraySetGrowSize((uint32)size, allocator->memory);
     byte null = 0;
