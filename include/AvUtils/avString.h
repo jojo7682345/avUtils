@@ -151,6 +151,7 @@ void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
 void avStringPrintf(AvString format, ...);
+void avStringPrintToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
 
 uint32 avStringScanf(AvString format, AvString str, ...);
 

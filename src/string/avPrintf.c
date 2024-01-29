@@ -3,9 +3,9 @@
 #include <AvUtils/avLogging.h>
 #include <AvUtils/avMath.h>
 
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <inttypes.h>
 
@@ -42,9 +42,47 @@ struct PrintfValueProps {
     bool8 alwaysShowSign;
 };
 
-static bool32 processValue(struct PrintfValueProps* props, char c) {
+typedef struct Stream {
+    FILE* const discard;
+    byte* const buffer;
+    const uint64 size;
+    uint64 pos;
+}*Stream;
+
+static struct Stream streamCreate(void* buffer, uint64 size, FILE* discard){
+    return (struct Stream){
+        .buffer=  buffer,
+        .size = size,
+        .pos = 0,
+        .discard = discard
+    };
+}
+
+static void streamDiscard(Stream stream) {
+    if (stream->discard == 0) {
+        return;
+    }
+    fwrite(stream->buffer, AV_MIN(stream->pos, stream->size), 1, stream->discard);
+    stream->pos = 0;
+}
+
+static void streamPutC(char chr, Stream stream) {
+    if (stream->pos >= stream->size) {
+        if (stream->discard == 0) {
+            return;
+        }
+        streamDiscard(stream);
+    }
+    stream->buffer[stream->pos++] = chr;
+}
+
+static void streamFlush(Stream stream) {
+    streamDiscard(stream);
+}
+
+static bool32 processValue(Stream stream, struct PrintfValueProps* props, char c) {
     if (c == '%') {
-        putchar('%');
+        streamPutC('%', stream);
         return true;
     }
     if (avCharIsNumber(c)) {
@@ -107,13 +145,13 @@ static uint32 numberOfCharacters(uint64 number, uint8 base) {
     return numDigits;
 }
 
-static void pad(uint32 amount) {
+static void pad(Stream stream, uint32 amount) {
     for (uint32 i = 0; i < amount; i++) {
-        putchar(' ');
+        streamPutC(' ', stream);
     }
 }
 
-static void printfUint(uint32 width, uint64 value, uint8 base, bool32 upperCase, bool32 zeropad, bool32 isSigned) {
+static void printfUint(Stream stream, uint32 width, uint64 value, uint8 base, bool32 upperCase, bool32 zeropad, bool32 isSigned) {
     avAssert(base <= (10 + 26), "invalid base");
     const char chr[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     const char CHR[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -128,21 +166,21 @@ static void printfUint(uint32 width, uint64 value, uint8 base, bool32 upperCase,
         buffer[index++] = characters[num];
         value /= base;
     }
-    
+
     uint32 padding = AV_MAX(((int64)width - (int64)numWidth), 0);
     if (zeropad) {
         for (uint32 i = 0; i < padding; i++) {
             buffer[index++] = '0';
         }
     } else {
-        pad(padding);
+        pad(stream, padding);
     }
     if (isSigned) {
         buffer[index++] = '-';
     }
 
     for (; index > 0; index--) {
-        putchar(buffer[index - 1]);
+        streamPutC(buffer[index - 1], stream);
     }
 }
 
@@ -177,7 +215,7 @@ static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, va_list* 
     }
 }
 
-static void printfValue(struct PrintfValueProps props, va_list* args) {
+static void printfValue(Stream stream, struct PrintfValueProps props, va_list* args) {
     // for integers
     if (props.type >= 0) {
 
@@ -216,15 +254,15 @@ static void printfValue(struct PrintfValueProps props, va_list* args) {
             return;
 
         }
-        printfUint(width, value, base, upperCase, zeroPad, isSigned);
+        printfUint(stream, width, value, base, upperCase, zeroPad, isSigned);
         return;
     }
 
     //for other
     if (props.type == PRINTF_TYPE_CHAR) {
-        pad(AV_MAX((int64)props.width - (int64)1, 0));
+        pad(stream, AV_MAX((int64)props.width - (int64)1, 0));
         char c = va_arg(*args, int);
-        putchar(c);
+        streamPutC(c, stream);
         return;
     }
 
@@ -232,16 +270,16 @@ static void printfValue(struct PrintfValueProps props, va_list* args) {
         if (props.zeroPad) {
             const char* str = va_arg(*args, const char*);
             uint64 len = strlen(str);
-            pad(AV_MAX((int64)props.width - (int64)len, 0));
+            pad(stream, AV_MAX((int64)props.width - (int64)len, 0));
             for (uint64 i = 0; i < len; i++) {
-                putchar(str[i]);
+                streamPutC(str[i], stream);
             }
             return;
         }
         AvString str = va_arg(*args, AvString);
-        pad(AV_MAX((int64)props.width - (int64)str.len, 0));
+        pad(stream, AV_MAX((int64)props.width - (int64)str.len, 0));
         for (uint64 i = 0; i < str.len; i++) {
-            putchar(str.chrs[i]);
+            streamPutC(str.chrs[i], stream);
         }
         return;
     }
@@ -249,9 +287,8 @@ static void printfValue(struct PrintfValueProps props, va_list* args) {
     avAssert(false, "unhandled case");
 }
 
-void avStringPrintf(AvString format, ...) {
-    va_list args;
-    va_start(args, format);
+void avStringPrintTo(Stream stream, AvString format, va_list args) {
+
     enum PrintfState state = PRINTF_STATE_NORMAL;
     struct PrintfValueProps props = { 0 };
     for (uint64 i = 0; i < format.len; i++) {
@@ -263,16 +300,44 @@ void avStringPrintf(AvString format, ...) {
                 memset(&props, 0, sizeof(struct PrintfValueProps));
                 break;
             }
-            putchar(c);
+            streamPutC(c, stream);
             break;
         case PRINTF_STATE_VALUE:
-            if (processValue(&props, c)) {
-                printfValue(props, &args);
+            if (processValue(stream, &props, c)) {
+                printfValue(stream, props, &args);
                 state = PRINTF_STATE_NORMAL;
             }
             break;
         }
     }
+}
 
+
+
+void avStringPrintToBuffer(char* buffer, uint32 bufferSize, AvString format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    struct Stream stream = streamCreate(buffer, bufferSize, NULL);
+
+    avStringPrintTo(&stream, format, args);
+
+    streamFlush(&stream);
+
+    va_end(args);
+}
+
+void avStringPrintToStdOut(AvString format, va_list args) {
+    char buffer[8] = {0};
+    struct Stream stream = streamCreate(buffer, 8, stdout);
+
+    avStringPrintTo(&stream, format, args);
+    streamFlush(&stream);
+}
+
+void avStringPrintf(AvString format, ...) {
+    va_list args;
+    va_start(args, format);
+    avStringPrintToStdOut(format, args);
     va_end(args);
 }
