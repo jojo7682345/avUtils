@@ -687,6 +687,8 @@ void avStringPrintln(AvString str) {
 	avStringPrintLn(str);
 }
 
+
+
 //only %i, %u, %c supported
 uint32 avStringScanf(AvString format, AvString str, ...) {
 	va_list elems;

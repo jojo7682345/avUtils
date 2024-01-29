@@ -150,6 +150,8 @@ void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
+void avStringPrintf(AvString format, ...);
+
 uint32 avStringScanf(AvString format, AvString str, ...);
 
 uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, AvString str);
