@@ -34,8 +34,11 @@ typedef struct AvFile_T {
 #endif
 } AvFile_T;
 
-void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...) {
+const AvFileDescriptor avStdOut = STDOUT_FILENO;
+const AvFileDescriptor avStdErr = STDERR_FILENO;
+const AvFileDescriptor avStdIn = STDIN_FILENO;
 
+void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...) {
 	AvDynamicArray arr;
 	avDynamicArrayCreate(0, sizeof(AvString), &arr);
 	va_list args;
@@ -123,7 +126,6 @@ static void* getFileStat(AvFile file, uint64 offset) {
 
 
 bool32 avFileExists(AvFile file) {
-
 	if (access(file->nameProperties.fileFullPath.chrs, F_OK) == 0) {
 		return true;
 	} else {
@@ -157,6 +159,16 @@ bool32 avFileOpen(AvFile file, AvFileOpenOptions mode) {
 
 AvFileStatus avFileGetStatus(AvFile file) {
 	return file->status;
+}
+AvFileDescriptor avFileGetDescriptor(AvFile file){
+	if(file->status == AV_FILE_STATUS_CLOSED || file->status == AV_FILE_STATUS_UNKNOWN ){
+		return AV_FILE_DESCRIPTOR_NULL;
+	}
+	return fileno(file->filehandle);
+}
+
+bool32 avFileDelete(AvFile file){
+	return remove(file->nameProperties.fileFullPath.chrs)==0;
 }
 
 static AvDateTime getFileTimeStat(AvFile file, uint64 offset) {

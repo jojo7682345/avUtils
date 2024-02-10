@@ -3,7 +3,6 @@
 #include "../avDefinitions.h"
 C_SYMBOLS_START
 
-#include "../string/avPath.h"
 #include "../avTypes.h"
 #include "../avString.h"
 #include "avFile.h"

@@ -11,7 +11,14 @@ C_SYMBOLS_START
 #define AV_CURRENT_DIR "."
 #define AV_PARENT_DIR ".."
 
+typedef int32 AvFileDescriptor;
+
 typedef struct AvFile_T* AvFile;
+
+extern const AvFileDescriptor avStdOut;
+extern const AvFileDescriptor avStdErr;
+extern const AvFileDescriptor avStdIn;
+#define AV_FILE_DESCRIPTOR_NULL (-1)
 
 typedef enum {
 	AV_FILE_OK = 0,
@@ -67,6 +74,9 @@ AvDateTime avFileGetCreationTime(AvFile file);
 AvDateTime avFileGetAccessedTime(AvFile file);
 AvDateTime avFileGetModifiedTime(AvFile file);
 AvFileStatus avFileGetStatus(AvFile file);
+AvFileDescriptor avFileGetDescriptor(AvFile file);
+
+bool32 avFileDelete(AvFile file);
 
 #define AV_FILE_OPEN_READ_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_READ, .binary=false, .update=false}
 #define AV_FILE_OPEN_READ_BINARY_DEFAULT (AvFileOpenOptions) {.openMode=AV_FILE_OPEN_READ, .binary=true, .update=false}
@@ -78,7 +88,7 @@ AvFileStatus avFileGetStatus(AvFile file);
 bool32 avFileOpen(AvFile file, AvFileOpenOptions mode);
 
 uint64 avFileRead(void* dst, uint64 size, AvFile file);
-uint64 afFileWrite(void* src, uint64 size, AvFile file);
+uint64 avFileWrite(void* src, uint64 size, AvFile file);
 
 
 void avFileClose(AvFile file);
