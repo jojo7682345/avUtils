@@ -4,7 +4,6 @@
 #include <AvUtils/avDataStructures.h>
 #include <AvUtils/avLogging.h>
 #include <AvUtils/avString.h>
-#include <AvUtils/string/avPath.h>
 #include <AvUtils/avFileSystem.h>
 #include <AvUtils/avProcess.h>
 #include <AvUtils/avBuilder.h>
@@ -324,27 +323,36 @@ void testFile() {
 }
 
 void testProcess() {
-	AvProcess gcc;
-	avProcessCreate("echo", NULL, NULL, &gcc);
+	AvFile testFile = AV_EMPTY;
+	avFileHandleCreate(AV_CSTR("./output.txt"), &testFile);
+	avFileOpen(testFile, AV_FILE_OPEN_WRITE_DEFAULT);
+	AvFileDescriptor out = avFileGetDescriptor(testFile);
+	AvProcessStartInfo info = AV_EMPTY;
+	avProcessStartInfoPopulate(&info, AV_CSTR("gcc"), (AvString)AV_EMPTY, AV_CSTR("--version"));
+	info.output = &out;
 
-	const char* arg[] = {
-		"test"
-	};
-	if (!avProcessStart(sizeof(arg) / sizeof(char*), arg, gcc)) {
-		printf("failed to start gcc\n");
-	}
-	uint32 retCode = 0;
-	if (!avProcessWaitForTermination(&retCode, gcc)) {
-		printf("failed to return from gcc\n");
-	}
+	AvProcess process = AV_EMPTY;
+	avProcessStart(info, &process);
+	avProcessWaitExit(process);
 
+	avFileClose(testFile);
+	avFileOpen(testFile, AV_FILE_OPEN_READ_DEFAULT);
 
+	uint64 size = avFileGetSize(testFile);
+	char* buffer = avAllocate(size+1, "buffer");
+	buffer[size]= '\0';
+	avFileRead(buffer, size, testFile);
+	printf("%s", buffer);
+	avFree(buffer);
 
-	avProcessDestroy(gcc);
+	avFileClose(testFile);
+	avFileDelete(testFile);
+	avFileHandleDestroy(testFile);
 
+	avProcessStartInfoDestroy(&info);
 }
 
-void testBuild(){
+void testBuild() {
 
 }
 
@@ -358,9 +366,8 @@ int main() {
 	testFile();
 	testString();
 	testPath("/");
-
+	testProcess();
 	testBuild();
-	//testProcess();
 	printf("test completed\n");
 	avStringDebugContextEnd;
 	return 0;
