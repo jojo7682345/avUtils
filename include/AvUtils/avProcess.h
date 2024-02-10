@@ -4,19 +4,28 @@
 C_SYMBOLS_START
 
 #include "avTypes.h"
+#include <AvUtils/avString.h>
+#include <AvUtils/dataStructures/avArray.h>
+#include <AvUtils/avFileSystem.h>
 
 typedef struct AvProcess_T* AvProcess;
-typedef void* PID;
 
-typedef void* FileDescriptor; //TODO: change to custom implementation
+typedef struct AvProcessStartInfo {
+    AvString executable;
+    AV_DS(AvArray, AvString) args;
+    AvString workingDirectory;
+    AvFileDescriptor* input;
+    AvFileDescriptor* output;
+} AvProcessStartInfo;
 
-void avProcessCreate(const char* exec, FileDescriptor* input, FileDescriptor* output, AvProcess* process);
+void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvString cwd, ...);
+#define avProcessStartInfoPopulate(info, bin, cwd, ...) avProcessStartInfoPopulate_(info, bin, cwd, __VA_ARGS__, AV_STR(nullptr, 0))
+void avProcessStartInfoCreate(AvProcessStartInfo* info, AvString bin, AvString cwd, uint32 argCount, AvString* argValues);
+void avProcessStartInfoDestroy(AvProcessStartInfo* info);
 
-bool32 avProcessStart(uint32 argC, const char* argV[], AvProcess process);
-
-bool32 avProcessWaitForTermination(uint32* retCode, AvProcess process);
-
-void avProcessDestroy(AvProcess process);
-
+bool32 avProcessStart(AvProcessStartInfo info, AvProcess* process);
+int32 avProcessWaitExit(AvProcess process);
+void avProcessKill(AvProcess process);
+void avProcessDiscard(AvProcess process);
 C_SYMBOLS_END
 #endif//__AV_PROCESS__
