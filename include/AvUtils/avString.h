@@ -5,11 +5,14 @@ C_SYMBOLS_START
 
 #include "avTypes.h"
 #include "dataStructures/avArray.h"
+#include "string/avPrintf.h"
 
 #define AV_STRING_FULL_LENGTH ((uint64)-2)
 #define AV_STRING_NULL ((uint64)-1)
 #define AV_STRING_PRINTF_CODE "%.*s"
 #define AV_STRING_WHOLE_MEMORY 0, AV_STRING_FULL_LENGTH
+
+#define AV_EMPTY_STRING ((AvString)AV_EMPTY)
 
 typedef struct AvStringMemoryProperties {
 	bool8 heapAllocated;
@@ -149,9 +152,6 @@ void avStringPrint(AvString str);
 void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
-
-void avStringPrintf(AvString format, ...);
-void avStringPrintToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
 
 uint32 avStringScanf(AvString format, AvString str, ...);
 
