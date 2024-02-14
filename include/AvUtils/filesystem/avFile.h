@@ -5,6 +5,7 @@ C_SYMBOLS_START
 
 #include "../avTypes.h"
 #include "../avString.h"
+#include <stdarg.h>
 #include "../util/avTime.h"
 
 #define AV_ROOT_DIR ""
@@ -94,6 +95,11 @@ uint64 avFileWrite(void* src, uint64 size, AvFile file);
 void avFileClose(AvFile file);
 
 void avFileHandleDestroy(AvFile file);
+
+void avStringPrintfToFile(AvFile file, AvString format, ...);
+void avStringPrintfToFileVA(AvFile file, AvString format, va_list args);
+void avStringPrintfToFileDescriptor(AvFileDescriptor out, AvString format, ...);
+void avStringPrintfToFileDescriptorVA(AvFileDescriptor out, AvString format, va_list args);
 
 C_SYMBOLS_END
 #endif//__AV_FILE__

@@ -5,7 +5,7 @@ C_SYMBOLS_START
 
 #include "avTypes.h"
 #include "dataStructures/avArray.h"
-#include "string/avPrintf.h"
+#include <stdarg.h>
 
 #define AV_STRING_FULL_LENGTH ((uint64)-2)
 #define AV_STRING_NULL ((uint64)-1)
@@ -152,6 +152,12 @@ void avStringPrint(AvString str);
 void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
+
+void avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
+void avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, va_list args);
+
+void avStringPrintf(AvString format, ...);
+void avStringPrintfVA(AvString format, va_list args);
 
 uint32 avStringScanf(AvString format, AvString str, ...);
 

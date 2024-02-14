@@ -2,6 +2,7 @@
 #include <AvUtils/string/avChar.h>
 #include <AvUtils/avLogging.h>
 #include <AvUtils/avMath.h>
+#include <AvUtils/filesystem/avFile.h>
 #include <AvUtils/dataStructures/avStream.h>
 
 #include <stdio.h>
@@ -283,7 +284,7 @@ void avStringPrintfToFile(AvFile file, AvString format, ...){
 }
 
 void avStringPrintfToFileVA(AvFile file, AvString format, va_list args){
-    if(avFileGetStatus(file)&AV_FILE_STATUS_OPEN_WRITE==0){
+    if((avFileGetStatus(file)&AV_FILE_STATUS_OPEN_WRITE)==0){
         return;
     }
     AvFileDescriptor fd = avFileGetDescriptor(file);
@@ -305,7 +306,7 @@ void avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, 
 void avStringPrintfToFileDescriptor(AvFileDescriptor out, AvString format, ...){
     va_list args;
     va_start(args, format);
-    avStringPrintToFileDescriptorVA(out, format, args);
+    avStringPrintfToFileDescriptorVA(out, format, args);
     va_end(args);
 }
 
@@ -324,5 +325,5 @@ void avStringPrintf(AvString format, ...) {
 }
 
 void avStringPrintfVA(AvString format, va_list args){
-    avStringPrintToFileVA(avStdOut, format, args);
+    avStringPrintfToFileDescriptorVA(avStdOut, format, args);
 }
