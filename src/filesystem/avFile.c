@@ -28,15 +28,15 @@ typedef struct AvFile_T {
 	bool32 statted;
 	struct stat* stats;
 #ifdef _WIN32
-
+#define getFileDescriptor _fileno
 #else
-
+#define getFileDescriptor fileno
 #endif
 } AvFile_T;
 
-const AvFileDescriptor avStdOut = STDOUT_FILENO;
-const AvFileDescriptor avStdErr = STDERR_FILENO;
-const AvFileDescriptor avStdIn = STDIN_FILENO;
+const AvFileDescriptor avStdIn = 0;
+const AvFileDescriptor avStdOut = 1;
+const AvFileDescriptor avStdErr = 2;
 
 void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...) {
 	AvDynamicArray arr;
@@ -164,7 +164,7 @@ AvFileDescriptor avFileGetDescriptor(AvFile file){
 	if(file->status == AV_FILE_STATUS_CLOSED || file->status == AV_FILE_STATUS_UNKNOWN ){
 		return AV_FILE_DESCRIPTOR_NULL;
 	}
-	return fileno(file->filehandle);
+	return getFileDescriptor(file->filehandle);
 }
 
 bool32 avFileDelete(AvFile file){
