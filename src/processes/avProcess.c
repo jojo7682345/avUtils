@@ -39,7 +39,7 @@ void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvStrin
     va_start(args, cwd);
     do {
         AvString arg = va_arg(args, AvString);
-        if(arg.chrs==nullptr || arg.len == 0){
+        if (arg.chrs == nullptr || arg.len == 0) {
             break;
         }
         avDynamicArrayAdd(&arg, arr);
@@ -90,6 +90,17 @@ bool32 avProcessStart(AvProcessStartInfo info, AvProcess* process) {
     configureProcess(info, *process);
     return executeProcess(info, *process);
 }
+
+int32 avProcessRun(AvProcessStartInfo info) {
+    AvProcess process = AV_EMPTY;
+    if (!avProcessStart(info, &process)) {
+        return -1;
+    }
+    int32 ret = avProcessWaitExit(process);
+    avProcessDiscard(process);
+    return ret;
+}
+
 int32 avProcessWaitExit(AvProcess process) {
     int32 exitStatus = -1;
     if (!waitForProcess(process, &exitStatus)) {
@@ -162,7 +173,7 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
         NULL,
         (char*)cmd.chrs,
         NULL,
-        NULL,
+        NULL, 
         TRUE,
         0,
         NULL,
@@ -170,6 +181,7 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
         (LPSTARTUPINFOA)&process->siStartInfo,
         &process->piProcInfo
     );
+
     avStringFree(&cmd);
     if (!bSuccess) {
         printf("Could not create child process %s: %s\n",

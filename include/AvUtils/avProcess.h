@@ -14,8 +14,8 @@ typedef struct AvProcessStartInfo {
     AvString executable;
     AV_DS(AvArray, AvString) args;
     AvString workingDirectory;
-    AvFileDescriptor* input;
-    AvFileDescriptor* output;
+    const AvFileDescriptor* input;
+    const AvFileDescriptor* output;
 } AvProcessStartInfo;
 
 void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvString cwd, ...);
@@ -27,5 +27,6 @@ bool32 avProcessStart(AvProcessStartInfo info, AvProcess* process);
 int32 avProcessWaitExit(AvProcess process);
 void avProcessKill(AvProcess process);
 void avProcessDiscard(AvProcess process);
+int32 avProcessRun(AvProcessStartInfo info);
 C_SYMBOLS_END
 #endif//__AV_PROCESS__

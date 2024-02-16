@@ -6,6 +6,7 @@
 #include <AvUtils/avString.h>
 #include <AvUtils/avFileSystem.h>
 #include <AvUtils/avProcess.h>
+#include <AvUtils/process/avPipe.h>
 #include <AvUtils/avBuilder.h>
 
 
@@ -339,17 +340,40 @@ void testProcess() {
 	avFileOpen(testFile, AV_FILE_OPEN_READ_DEFAULT);
 
 	uint64 size = avFileGetSize(testFile);
-	char* buffer = avAllocate(size+1, "buffer");
-	buffer[size]= '\0';
+	char* buffer = avAllocate(size + 1, "buffer");
+	buffer[size] = '\0';
 	avFileRead(buffer, size, testFile);
 	printf("%s", buffer);
 	avFree(buffer);
 
 	avFileClose(testFile);
-	avFileDelete(testFile);
+	//avFileDelete(testFile);
 	avFileHandleDestroy(testFile);
 
 	avProcessStartInfoDestroy(&info);
+}
+
+void testPipe() {
+	AvProcessStartInfo info = AV_EMPTY;
+	avProcessStartInfoPopulate(&info, AV_CSTR("gcc.exe"), (AvString)AV_EMPTY, AV_CSTR("--version"));
+	AvProcessStartInfo findStr = AV_EMPTY;
+	avProcessStartInfoPopulate(&findStr, AV_CSTR("findstr"), AV_EMPTY_STRING, AV_CSTR("Free"));
+
+	AvPipe pipe = AV_EMPTY;
+	avPipeCreate(&pipe);
+
+	info.output = &pipe.write;
+	avProcessRun(info);
+	avPipeConsumeWriteChannel(&pipe);
+
+	findStr.input = &pipe.read;
+	avProcessRun(findStr);
+	avPipeConsumeReadChannel(&pipe);
+
+	avPipeDestroy(&pipe);
+
+	avProcessStartInfoDestroy(&info);
+	avProcessStartInfoDestroy(&findStr);
 }
 
 void testBuild() {
@@ -368,6 +392,7 @@ int main() {
 	testPath("/");
 	testProcess();
 	testBuild();
+	testPipe();
 	printf("test completed\n");
 	avStringDebugContextEnd;
 	return 0;
