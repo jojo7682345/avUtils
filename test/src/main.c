@@ -347,7 +347,7 @@ void testProcess() {
 	avFree(buffer);
 
 	avFileClose(testFile);
-	//avFileDelete(testFile);
+	avFileDelete(testFile);
 	avFileHandleDestroy(testFile);
 
 	avProcessStartInfoDestroy(&info);
