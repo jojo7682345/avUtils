@@ -12,7 +12,6 @@
 
 static void createPipe(AvPipe* pipe);
 static void destroyPipe(AvPipe* pipe);
-static void enablePipe(AvPipe* pipe, uint32 index, bool32 enable);
 static void consumeWriteChannel(AvPipe* pipe);
 static void consumeReadChannel(AvPipe* pipe);
 

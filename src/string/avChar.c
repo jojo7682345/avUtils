@@ -30,14 +30,24 @@ char avCharToUppercase(char chr) {
 
 bool32 avCharIsWhiteSpace(char chr) {
     switch (chr) {
-        case ' ':
-        case '\n':
-        case '\r':
-        case '\t':
-        case '\f':
-            return true;
-        default:
-            return false;
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\f':
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool32 avCharIsNewline(char chr) {
+    switch (chr) {
+    case '\n':
+    case '\r':
+        return true;
+    default:
+        return false;
     }
 }
 

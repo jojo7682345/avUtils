@@ -18,6 +18,7 @@ char avCharToLowercase(char chr);
 char avCharToUppercase(char chr);
 
 bool32 avCharIsWhiteSpace(char chr);
+bool32 avCharIsNewline(char chr);
 bool32 avCharEqualsCaseInsensitive(char chrA, char chrB);
 
 C_SYMBOLS_END

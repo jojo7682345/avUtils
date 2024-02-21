@@ -16,6 +16,9 @@ void* avDynamicAllocatorAllocate(uint64 size, AvDynamicAllocator* allocator) {
     avDynamicArraySetGrowSize((uint32)size, allocator->memory);
     byte null = 0;
     uint32 index = avDynamicArrayAdd(&null, allocator->memory);
+    for(uint64 i = 1; i < size; i++){
+        avDynamicArrayAdd(&null, allocator->memory);
+    }
     uint32 pageIndex = avDynamicArrayGetIndexPage(&index, allocator->memory);
     avAssert(index == 0, "memory corrupted");
     return avDynamicArrayGetPageDataPtr(pageIndex, allocator->memory);

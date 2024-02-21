@@ -47,6 +47,5 @@ bool32 avPathGetDirectoryContents(AvPathRef path);
 
 void avPathClose(AvPathRef path);
 
-
 C_SYMBOLS_END
 #endif//__AV_DIRECTORY__

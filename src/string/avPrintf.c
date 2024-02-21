@@ -98,11 +98,6 @@ static bool32 processValue(AvStream stream, struct PrintfValueProps* props, char
 }
 
 static uint32 numberOfCharacters(uint64 number, uint8 base) {
-    // Check for invalid inputs
-    if (number <= 0 || base <= 1) {
-        return 0;
-    }
-
     // Calculate the number of characters using the logarithm formula
     uint32 numDigits = (uint32)(log(number) / log(base)) + 1;
 
@@ -125,6 +120,9 @@ static void printfUint(AvStream stream, uint32 width, uint64 value, uint8 base, 
 
     char buffer[64] = { 0 };
     uint32 index = 0;
+    if(value == 0){
+        buffer[index++] = characters[0];
+    }
     while (value != 0) {
         uint32 num = value % base;
         buffer[index++] = characters[num];
