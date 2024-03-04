@@ -72,8 +72,13 @@ void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray);
 C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ARRAY__
 
+
+
+
+
 #ifdef AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 C_SYMBOLS_START
+#define AV_DYNAMIC_ARRAY_ADVANCED
 
 #ifndef __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
 #define __AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
@@ -91,6 +96,16 @@ void* avDynamicArrayGetPtr(uint32 index, AvDynamicArray dynamicArray);
 
 C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ARRAY_MEMORY_LAYOUT__
+#endif//AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 
+#ifdef AV_DYNAMIC_ARRAY_ADVANCED
+C_SYMBOLS_START
 
-#endif
+#ifndef __AV_DYNAMIC_ARRAY_ADVANCED__
+#define __AV_DYNAMIC_ARRAY_ADVANCED__
+
+uint32 avDynamicArrayAddEmpty(void** data, AvDynamicArray dynamicArray);
+
+C_SYMBOLS_END
+#endif//__AV_DYNAMIC_ARRAY_ADVANCED__
+#endif//AV_DYNAMIC_ARRAY_ADVANCED

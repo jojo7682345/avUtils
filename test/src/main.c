@@ -7,7 +7,8 @@
 #include <AvUtils/avFileSystem.h>
 #include <AvUtils/avProcess.h>
 #include <AvUtils/process/avPipe.h>
-#include <AvUtils/avBuilder.h>
+#include <AvUtils/avEnvironment.h>
+#include <AvUtils/builder/avBuilder.h>
 
 
 #include <stdio.h>
@@ -376,8 +377,21 @@ void testPipe() {
 	avProcessStartInfoDestroy(&findStr);
 }
 
-void testBuild() {
+void testEnvironment(){
 
+	avChangeDirectory(AV_CSTR("./bin"));
+	testPath(".");
+	avChangeDirectory(AV_CSTR(".."));
+	testPath(".");
+
+	AvString path = AV_EMPTY;
+	avGetEnvironmentVariable(AV_CSTR("PATH"), &path);
+	avStringPrintLn(path);
+	avStringFree(&path);
+}
+
+void testBuild() {
+	
 }
 
 int main() {
@@ -391,8 +405,9 @@ int main() {
 	testString();
 	testPath("/");
 	testProcess();
-	testBuild();
 	testPipe();
+	testEnvironment();
+	testBuild();
 	printf("test completed\n");
 	avStringDebugContextEnd;
 	return 0;

@@ -181,6 +181,18 @@ static Page* getPage(uint32* index, AvDynamicArray dynamicArray) {
 	return page;
 }
 
+uint32 avDynamicArrayAddEmpty(void** data, AvDynamicArray dynamicArray){
+	avAssert(data != NULL, "data cannot be a null pointer");
+	uint32 index = dynamicArray->count;
+	Page* page = getPage(&index, dynamicArray);
+	if (page == NULL) {
+		page = addPage(dynamicArray->growSize, dynamicArray);
+	}
+	*data = getPtr(page, index, dynamicArray);
+	page->count++;
+	return dynamicArray->count++;
+}
+
 uint32 avDynamicArrayAdd(void* data, AvDynamicArray dynamicArray) {
 	avAssert(data != NULL, "data cannot be a null pointer");
 
