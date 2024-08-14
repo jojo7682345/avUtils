@@ -8,9 +8,10 @@ avUtils {
 		include
 	]
 }
+
 avUtilsTest {
 	type: EXE 
-	flags: -std=c11 -Wall -ggdb -Wl,-rpath,./lib
+	flags: -std=c11 -Wall -ggdb -lm -Wl,-rpath,./lib
 	source: [
 		test/src
 	]

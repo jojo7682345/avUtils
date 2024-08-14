@@ -11,7 +11,7 @@ void avArrayAllocateWithFreeCallback(uint32 count, uint64 elementSize, AvArrayRe
     avAssert(count != 0, "cannot allocate array of size 0");
     avAssert(elementSize != 0, "cannot allocate elements of size 0");
     avAssert(array != nullptr, "array must be a valid reference");
-    avAssert(!((deallocateElementCallback != nullptr) && (destroyElementCallback != nullptr)), "only one destroycallback can be defined");
+    avAssert(!((deallocateElementCallback != (AvDeallocateElementCallback){0}) && (destroyElementCallback != (AvDestroyElementCallback){0})), "only one destroycallback can be defined");
 
     AvArray tmpArray = {
         .count = count,

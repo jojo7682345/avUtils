@@ -12,7 +12,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#ifndef __USE_MISC
 #define __USE_MISC
+#endif
 #include <dirent.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -58,7 +60,6 @@ static void destroyContent(Content* content) {
 static void processPath(AvStringRef dst, AvString src) {
     avAssert(dst->memory == nullptr, "string must be emtpy");
 
-    avStringDebugContextStart;
     AvString str = AV_EMPTY;
     if (src.len == 0 || src.chrs == nullptr) {
         avStringClone(&str, AV_CSTR("."));
@@ -107,12 +108,10 @@ static void processPath(AvStringRef dst, AvString src) {
     //printf("array freed\n");
     avStringFree(&str);
     //printf("freed agained\n");
-    avStringDebugContextEnd;
 
 }
 
 bool32 avPathOpen(AvString str, AvPathRef path) {
-    avStringDebugContextStart;
 
     processPath(&path->path, str);
     //printf("processed\n");
@@ -120,11 +119,8 @@ bool32 avPathOpen(AvString str, AvPathRef path) {
     //printf("typed\n");
     if (path->type == AV_PATH_TYPE_UNKNOWN) {
         avPathClose(path);
-        avStringDebugContextEnd;
         return false;
     }
-
-    avStringDebugContextEnd;
     return true;
 }
 
@@ -151,7 +147,6 @@ bool32 avPathGetDirectoryContents(AvPathRef path) {
         if (avStringEquals(content.name, AV_CSTR(".")) || avStringEquals(content.name, AV_CSTR(".."))) {
             continue;
         }
-
 
         AvString fullPath = AV_EMPTY;
         avStringJoin(&fullPath, path->path, AV_CSTR((path->path.chrs[path->path.len-1]=='/' ? "" : "/")), content.name);

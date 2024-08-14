@@ -3,6 +3,7 @@
 
 #define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 #include <AvUtils/dataStructures/avDynamicArray.h>
+#define _POSIX_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>

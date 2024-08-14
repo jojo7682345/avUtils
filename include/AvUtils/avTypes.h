@@ -1,74 +1,85 @@
 #ifndef __AV_TYPES__
 #define __AV_TYPES__
-#include "avDefinitions.h"
-C_SYMBOLS_START
 
-#ifndef __cplusplus
+#ifndef true
 #define true 1
+#endif
+
+#ifndef false
 #define false 0
-#define nullptr ((void*)0UL)
 #endif
 
-#define avUint unsigned int
-#define avUint32 unsigned int
-
-#ifdef _WIN32
-#define avUint64 unsigned long long
-#else
-#define avUint64 unsigned long
+#ifndef NULL
+#define NULL 0
 #endif
 
-#define avUint16 unsigned short
-#define avUint8 unsigned char
-#define avByte unsigned char
-
-#define avInt32 int
-#define avInt64 long
-#define avInt16 short
-#define avInt8 char
-
-#define avBool8 unsigned char
-#define avBool32 unsigned int
-
-#ifndef AV_DISABLE_TYPES
-
-typedef avUint uint;
-typedef avUint32 uint32;
-typedef avUint64 uint64;
-typedef avUint16 uint16;
-typedef avUint8 uint8;
-typedef avByte byte;
-
-typedef avInt32 int32;
-typedef avInt64 int64;
-typedef avInt16 int16;
-typedef avInt8 int8;
-
-typedef avBool8 bool8;
-typedef avBool32 bool32;
-
-#else
-
-#define uint avUint
-#define uint32 avUint32
-#define uint64 avUint64
-#define uint16 avUint16
-#define uint8 avUint8
-#define byte avByte
-
-#define int32 avInt32
-#define int64 avInt64
-#define int16 avInt16
-#define int8 avInt8
-
-#define bool8 avBool8
-#define bool32 avBool32
-
+#ifndef nullptr 
+#define nullptr (void*){ 0 }
 #endif
+
+#ifndef AV_UTILS_DISABLE_TYPEDEFS
+
+#ifdef __INT64_TYPE__
+typedef __UINT64_TYPE__ uint64;
+typedef __INT64_TYPE__ int64;
+typedef __UINT64_TYPE__ bool64;
+#endif
+
+#ifdef __INT32_TYPE__
+typedef __UINT32_TYPE__ uint32;
+typedef __INT32_TYPE__ int32;
+typedef __UINT32_TYPE__ bool32;
+typedef __UINT32_TYPE__ uint;
+#endif
+
+#ifdef __INT16_TYPE__
+typedef __UINT16_TYPE__ uint16;
+typedef __INT16_TYPE__ int16;
+typedef __UINT16_TYPE__ bool16;
+#endif
+
+#ifdef __INT8_TYPE__
+typedef __UINT8_TYPE__ uint8;
+typedef __INT8_TYPE__ int8;
+typedef __UINT8_TYPE__ byte;
+typedef __INT8_TYPE__ sbyte;
+typedef __UINT8_TYPE__ bool8;
+typedef uint8* AvAddress;
+#endif
+
+#else //AV_UTILS_DISABLE_TYPEDEFS
+
+#ifdef __INT64_TYPE__
+#define uint64 __UINT64_TYPE__
+#define int64 __INT64_TYPE__
+#define bool64 __UINT64_TYPE__
+#endif
+
+#ifdef __INT32_TYPE__
+#define uint32 __UINT32_TYPE__
+#define int32 __INT32_TYPE__
+#define bool32 __UINT32_TYPE__
+#endif
+
+#ifdef __INT16_TYPE__
+#define uint16 __UINT16_TYPE__
+#define int16 __INT16_TYPE__
+#define bool16 __UINT16_TYPE__
+#endif
+
+#ifdef __INT8_TYPE__
+#define uint8 __UINT8_TYPE__
+#define int8 __INT8_TYPE__
+#define byte __UINT8_TYPE__
+#define sbyte __INT8_TYPE__
+#define bool8 __UINT8_TYPE__
+#define AvAddress uint8*
+#endif
+
+#endif//AV_UTILS_DISABLE_TYPEDEFS
 
 typedef void (*AvDeallocateElementCallback)(void*, uint64);
 typedef void (*AvDestroyElementCallback)(void*);
 typedef uint64 strOffset;
 
-C_SYMBOLS_END
 #endif//__AV_TYPES__

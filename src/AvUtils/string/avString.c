@@ -27,10 +27,12 @@ uint64 avCStringLength(const char* str) {
 }
 
 void avStringClone(AvStringRef dst, AvString src) {
-	avAssert(dst != nullptr, "dst must be a valid string reference");
 	AvStringHeapMemory memory;
 	avStringMemoryHeapAllocate(src.len, &memory);
 	avStringMemoryStore(src, 0, AV_STRING_FULL_LENGTH, memory);
+	if(dst->memory){
+		avStringFree(dst);	
+	}
 	avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, memory);
 }
 
@@ -187,8 +189,14 @@ void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory) {
 	memory->referenceCount = 0;
 
 #ifndef NDEBUG
-	if (debugContext && !memory->properties.heapAllocated) {
-		memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->allocatedMemory);
+	if (debugContext) {
+		if(!memory->properties.heapAllocated){
+			memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->allocatedMemory);
+			memory->properties.debugContext = debugContext;
+		}else if (debugContext->prev) {
+			memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->prev->allocatedMemory);
+			memory->properties.debugContext = debugContext->prev;
+		}
 	}
 #endif
 
@@ -247,13 +255,17 @@ void avStringMemoryFree(AvStringMemoryRef memory) {
 	avAssert(memory->referenceCount == 0, "freeing string memory still in use");
 
 #ifndef NDEBUG
-	if (debugContext && !memory->properties.heapAllocated) {
-		avDynamicArrayRemove(memory->properties.contextAllocationIndex, debugContext->allocatedMemory);
-		for (uint32 i = memory->properties.contextAllocationIndex; i < avDynamicArrayGetSize(debugContext->allocatedMemory); i++) {
+	if (memory->properties.debugContext) {
+		avDynamicArrayRemove(memory->properties.contextAllocationIndex, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
+		for (
+			uint32 i = memory->properties.contextAllocationIndex; 
+			i < avDynamicArrayGetSize(((StringDebugContext)memory->properties.debugContext)->allocatedMemory); 
+			i++
+		) {
 			AvStringMemoryRef tmp;
-			avDynamicArrayRead(&tmp, i, debugContext->allocatedMemory);
+			avDynamicArrayRead(&tmp, i, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
 			tmp->properties.contextAllocationIndex--;
-			avDynamicArrayWrite(&tmp, i, debugContext->allocatedMemory);
+			avDynamicArrayWrite(&tmp, i, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
 		}
 	}
 #endif
@@ -299,6 +311,7 @@ void avStringDebugContextStart_() {
 	StringDebugContext context = avCallocate(1, sizeof(StringDebugContext_T), "allocating string debug context");
 	context->prev = debugContext;
 	avDynamicArrayCreate(0, sizeof(AvStringMemoryRef), &context->allocatedMemory);
+	avDynamicArraySetAllowRelocation(true, context->allocatedMemory);
 	debugContext = context;
 
 }
@@ -310,7 +323,7 @@ void avStringDebugContextEnd_() {
 		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
-		printf("allocated string memory containing \"%.*s\" has not been freed: %"PRIu64" remaining references\n", (uint32)stringMemory->capacity, stringMemory->data, stringMemory->referenceCount);
+		avStringPrintf(AV_CSTR("allocated string memory containing \"%s\" has not been freed: %u remaining references\n"), AV_STR(stringMemory->data, stringMemory->capacity), stringMemory->referenceCount);
 	}
 	avDynamicArrayDestroy(debugContext->allocatedMemory);
 
@@ -376,19 +389,19 @@ strOffset avStringFindLastOccuranceOf(AvString str, AvString find) {
 }
 
 strOffset avStringFindFirstOccuranceOf(AvString str, AvString find) {
-	uint64 strOffset = 0;
 	if (str.len < find.len) {
 		return AV_STRING_NULL;
 	}
-
 	for (uint64 i = 0; i < str.len; i++) {
-		if (str.chrs[i] == find.chrs[strOffset]) {
-			strOffset++;
-			if (strOffset == find.len) {
-				return i;
+		bool32 match = true;
+		for(uint64 j = i; j < AV_MIN(str.len, i+find.len); j++){
+			if(str.chrs[j]!=find.chrs[j-i]){
+				match = false;
+				break;
 			}
-		} else {
-			strOffset = 0;
+		}
+		if(match){
+			return i;
 		}
 	}
 	return AV_STRING_NULL;
@@ -415,15 +428,28 @@ uint64 avStringFindCount(AvString str, AvString find) {
 }
 
 bool32 avStringEndsWith(AvString str, AvString sequence) {
-	strOffset offset = avStringFindLastOccuranceOf(str, sequence);
-	if (offset == AV_STRING_NULL) {
+	if(str.len < sequence.len){
 		return false;
 	}
-	return offset + sequence.len == str.len;
+	uint64 offset = str.len - sequence.len;
+	for(uint64 i = offset; i < str.len; i++){
+		if(str.chrs[i] != sequence.chrs[i-offset]){
+			return false;
+		}
+	}
+	return true;
 }
 
 bool32 avStringStartsWith(AvString str, AvString sequence) {
-	return avStringFindFirstOccuranceOf(str, sequence) == 0;
+	if(str.len < sequence.len){
+		return false;
+	}
+	for(uint64 i = 0; i < sequence.len; i++){
+		if(str.chrs[i] != sequence.chrs[i]){
+			return false;
+		}
+	}
+	return true;
 }
 
 bool32 avStringEndsWithChar(AvString str, char chr) {
@@ -451,6 +477,8 @@ bool32 avStringWrite(AvStringRef str, strOffset offset, char chr) {
 	str->memory->data[offset] = chr;
 	return true;
 }
+
+
 char avStringRead(AvString str, strOffset offset) {
 	if (str.len == 0) {
 		return '\0';
@@ -537,6 +565,92 @@ void avStringReplaceChar(AvStringRef str, char original, char replacement) {
 	}
 }
 
+uint64 avStringReplaceAll(AvStringRef dst, AvString str, uint32 count, uint64 stride, AvString* sequences, AvString* replacements){
+	avAssert(dst != nullptr, "destination must be a valid reference");
+	avAssert(sequences != nullptr, "sequences must be a valid array");
+	avAssert(replacements != nullptr, "replacements must be a valid array");
+	if(str.len == 0){
+		AvString tmpStr = {
+			.chrs = nullptr,
+			.len = 0,
+			.memory = nullptr,
+		};
+		memcpy(dst, &tmpStr, sizeof(AvString));
+		return 0;
+	}
+	uint64* counts = avCallocate(count, sizeof(uint64), "counts");
+	uint64 totalCount = 0;
+	for(uint32 i = 0; i < count; i++){
+		counts[i] = avStringFindCount(str, *((AvString*)((byte*)sequences+(i*stride))));
+		totalCount += counts[i];
+	}
+
+	if(totalCount==0){
+		avStringClone(dst, str);
+		avFree(counts);
+		return 0;
+	}
+
+	uint64 remainingLength = str.len;
+	uint64 replacementLength = 0;
+	for(uint32 i = 0; i < count; i++){
+		remainingLength -= counts[i] * ((AvString*)((byte*)sequences+(i*stride)))->len;
+		replacementLength += counts[i] * ((AvString*)((byte*)replacements+(i*stride)))->len;
+	}
+	avFree(counts);
+	uint64 newLength = remainingLength + replacementLength;
+	AvStringHeapMemory memory;
+	avStringMemoryHeapAllocate(newLength, &memory);
+
+	uint64 writeIndex = 0;
+	uint64 readIndex = 0;
+	uint64 countReplaced = 0;
+
+	while (countReplaced != totalCount) {
+		AvString remainingStr = AV_STR(
+			str.chrs + readIndex,
+			str.len - readIndex
+		);
+		uint32 closestSequence = -1;
+		strOffset closestOffset = -1;
+		for(uint32 i = 0; i < count; i++){
+			strOffset offset = avStringFindFirstOccuranceOf(
+				remainingStr,
+				*((AvString*)((byte*)sequences+(i*stride)))
+			);
+			if(offset==AV_STRING_NULL){
+				continue;
+			}
+			if(offset < closestOffset){
+				closestSequence = i;
+				closestOffset = offset;
+			}
+		}
+
+		avAssert(closestSequence!=-1, "error");
+		
+		strOffset offset = closestOffset;
+		avStringMemoryStore(remainingStr, writeIndex, offset, memory);
+		readIndex += offset;
+		
+		
+		writeIndex += offset;
+		avStringMemoryStore(*((AvString*)((byte*)replacements+(closestSequence*stride))), writeIndex, ((AvString*)((byte*)replacements+(closestSequence*stride)))->len, memory);
+		readIndex += ((AvString*)((byte*)sequences+(closestSequence*stride)))->len;
+		writeIndex += ((AvString*)((byte*)replacements+(closestSequence*stride)))->len;
+		countReplaced++;
+	}
+	AvString remainingStr = AV_STR(
+		str.chrs + readIndex,
+		str.len - readIndex
+	);
+	avStringMemoryStore(remainingStr, writeIndex, remainingStr.len, memory);
+
+	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
+	return totalCount;
+
+}
+
 uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvString replacement) {
 	avAssert(dst != nullptr, "destination must be a valid reference");
 
@@ -565,7 +679,7 @@ uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvStrin
 		strOffset offset = avStringFindFirstOccuranceOf(
 			remainingStr,
 			sequence
-		) - 1;
+		);
 		avStringMemoryStore(remainingStr, writeIndex, offset, memory);
 		readIndex += offset;
 		writeIndex += offset;
@@ -578,10 +692,14 @@ uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvStrin
 		str.chrs + readIndex,
 		str.len - readIndex
 	);
-	avStringMemoryStore(remainingStr, readIndex, remainingStr.len, memory);
+	avStringMemoryStore(remainingStr, writeIndex, remainingStr.len, memory);
 
 	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
 	return count;
+}
+
+void avStringUnsafeCopy(AvStringRef dst, AvStringRef src){
+	memcpy(dst, src, sizeof(AvString));
 }
 
 void avStringJoin_(AvStringRef dst, ...) {
@@ -672,10 +790,12 @@ void avStringMemoryStoreCharArrays(AvStringMemoryRef memory, uint32 count, const
 
 void avStringPrint(AvString str) {
 	printf("%.*s", (uint32)str.len, str.chrs);
+	fflush(stdout);
 }
 
 void avStringPrintData(AvString str) {
 	printf("{ .chrs=%.*s, .len=%"PRIu64" .memory=0x%p }\n", (uint32)str.len, str.chrs, str.len, str.memory);
+	fflush(stdout);
 }
 
 void avStringPrintLn(AvString str) {
@@ -837,6 +957,24 @@ void avStringFlip(AvStringRef str) {
 	}
 
 	avStringFree(&refString);
+}
+
+void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocator){
+	avAssert(src.len != 0, "string length cannot be 0");
+	avAssert(src.chrs != nullptr, "string must have data");
+	avAssert(dst!=nullptr, "destination must be a valid reference");
+	avAssert(dst->memory==nullptr, "destination must be empty");
+	avAssert(dst->chrs==nullptr, "destination must be empty");
+	avAssert(dst->len==0, "destination must be empty");
+
+	char* buffer = avAllocatorAllocate(src.len+1, allocator);
+	memcpy(buffer, src.chrs, src.len);
+	AvString str = {
+		.chrs = buffer,
+		.len = src.len,
+		.memory = nullptr,
+	};
+	memcpy(dst, &str, sizeof(AvString));
 }
 
 

@@ -16,8 +16,10 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #endif
 
 typedef uint64 PID;
@@ -31,6 +33,10 @@ typedef struct AvProcess_T {
 
 #endif
 } AvProcess_T;
+
+void avProcessStartInfoPopulateARR(AvProcessStartInfo* info, AvString bin, AvString cwd, uint32 count, AvString* args){
+    avProcessStartInfoCreate(info, bin, cwd, count, args);
+}
 
 void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvString cwd, ...) {
     AvDynamicArray arr = AV_EMPTY;
@@ -52,7 +58,6 @@ void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvStrin
         memcpy(argList + index, &element, sizeof(AvString));
         });
     avDynamicArrayDestroy(arr);
-
     avProcessStartInfoCreate(info, bin, cwd, argCount, argList);
     avFree(argList);
 }
@@ -224,46 +229,70 @@ bool32 waitForProcess(AvProcess process, int32* exitStatus) {
 
 #else
 
-static void configureProcess(AvProcess process) {
-    printf("still has to be implemented\n");
+static void killProcess(AvProcess process){
+
+}
+static void configureProcess(AvProcessStartInfo info, AvProcess process) {
+    
     //TODO: implement
     return;
 }
 
-static bool32 waitForProcess(AvProcess process) {
-    printf("still has to be implemented\n");
-    //TODO: implement
-    return false;
+bool32 waitForProcess(AvProcess process, int32* exitStatus) {
+
+    while(0 == waitpid(process->pid , exitStatus , WNOHANG)){}
+    return true;
 }
 
-static bool32 executeProcess(AvString cmd, AvProcess process) {
-    printf("still has to be implemented\n");
-    // TODO: implement
-    //  PID cpid = fork();
-    //  if (cpid < 0) {
-    //      printf("Could not fork child process: %s: %s", process->program, strerror(errno));
-    //      return false;
-    //  }
+static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
+    PID cpid = fork();
+    if (cpid < 0) {
+         avStringPrintf(AV_CSTR("Could not fork child process: %s: %0s\n"), info.executable, strerror(errno));
+         return false;
+    }
 
-    // if (cpid == 0) {
+    if (cpid == 0) {
 
+        
+        //TODO: piping in and output
+        if(info.output){
+            close(STDOUT_FILENO); 
+            dup2(*info.output, STDOUT_FILENO);
+            close(*info.output);
+        }  
+        if(info.input){
+            close(STDIN_FILENO);   //closing stdin
+            dup2(*info.input, STDIN_FILENO); 
+            close(*info.input);  
+        }
+        char** args = avCallocate(info.args.count+1, sizeof(char*), "args");
+        for(uint32 i = 0; i < info.args.count; i++){
+             args[i] = (char*)((AvString*)info.args.data)[i].chrs;
+        }
+        args[info.args.count] = 0;
 
-    //     // if (fdin) {
-    //     //     if (dup2(*fdin, STDIN_FILENO) < 0) {
-    //     //         printf("Could not setup stdin for child process: %s", strerror(errno));
-    //     //     }
-    //     // }
+        if (execvp(args[0], args) < 0) {
+            printf("Could not exec child process: %s: %s\n",
+                  args[0], strerror(errno));
+            avFree(args);
+            exit(-1);
+        }
 
-    //     // if (fdout) {
-    //     //     if (dup2(*fdout, STDOUT_FILENO) < 0) {
-    //     //         printf("Could not setup stdout for child process: %s", strerror(errno));
-    //     //     }
-    //     // }
-    //     // if (execvp(args.elems[0], (char* const*)args.elems) < 0) {
-    //     //     printf("Could not exec child process: %s: %s",
-    //     //           cmd, strerror(errno));
-    //     // }
-    // }
+        close(STDOUT_FILENO);
+        close(STDIN_FILENO);
+        close(STDERR_FILENO);
+        if(info.output){
+            close(*info.output);
+        }
+        if(info.input){
+            close(*info.input);
+        }
+
+        avFree(args);
+        exit(0);
+    }else{
+        process->pid = cpid;
+    }
 
     return true;//cpid;
 }

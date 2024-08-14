@@ -5,6 +5,7 @@ C_SYMBOLS_START
 
 #include "avTypes.h"
 #include "dataStructures/avArray.h"
+#include "memory/avAllocator.h"
 #include <stdarg.h>
 
 #define AV_STRING_FULL_LENGTH ((uint64)-2)
@@ -17,6 +18,7 @@ C_SYMBOLS_START
 typedef struct AvStringMemoryProperties {
 	bool8 heapAllocated;
 	uint32 contextAllocationIndex; // for debugging purposes
+	void* debugContext;
 } AvStringMemoryProperties;
 typedef struct AvStringMemory {
 	char* data; // the characters
@@ -137,7 +139,10 @@ int32 avStringCompare(AvString strA, AvString strB);
 bool32 avStringEqualsCaseInsensitive(AvString strA, AvString strB);
 
 void avStringReplaceChar(AvStringRef str, char original, char replacement);
+uint64 avStringReplaceAll(AvStringRef dst, AvString str, uint32 count, uint64 stride, AvString* sequences, AvString* replacements);
 uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvString replacement);
+
+void avStringUnsafeCopy(AvStringRef dst, AvStringRef src);
 
 void avStringJoin_(AvStringRef dst, ...);
 #define avStringJoin(dst, ...) avStringJoin_(dst,__VA_ARGS__, AV_STR((char*)AV_STRING_NULL, AV_STRING_NULL))
@@ -165,6 +170,8 @@ uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, Av
 uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvString str);
 
 void avStringFlip(AvStringRef str);
+
+void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocator);
 
 C_SYMBOLS_END
 #endif//__AV_STRING__

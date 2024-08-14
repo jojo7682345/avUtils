@@ -66,14 +66,21 @@ static void consumeReadChannel(AvPipe* pipe){
 
 
 #else
-static void createPipe(AvPipe* pipe) {
+static void createPipe(AvPipe* handle) {
     int fd[2];
     pipe(fd);
-    pipe->read = fd[0];
-    pipe->write = fd[1];
+    handle->read = fd[0];
+    handle->write = fd[1];
 }
-static void destroyPipe(AvPipe* pipe) {
-    close(pipe->read);
-    close(pipe->write);
+static void destroyPipe(AvPipe* handle) {
+    close(handle->read);
+    close(handle->write);
+}
+
+static void consumeWriteChannel(AvPipe* handle){
+    close(handle->write);
+}
+static void consumeReadChannel(AvPipe* handle){
+    close(handle->read);
 }
 #endif

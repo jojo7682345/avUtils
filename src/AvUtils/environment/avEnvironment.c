@@ -33,7 +33,7 @@ bool32 avGetEnvironmentVariable(AvString variable, AvStringRef value) {
     }
     avStringClone(value, AV_STR(buff, resultLengthInCharacters));
 #else
-    const char* env = secure_getenv(str.chrs);
+    const char* env = getenv(str.chrs);
     avStringFree(&str);
     if (env == nullptr) {
         return false;
