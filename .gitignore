@@ -14,13 +14,13 @@ bin/
 lib/*
 lib/
 tmp/
+build/*
 builder*
 builder.exe
-avBuild.*
+
 .vs/*
 .vscode/*
-!build/builder.c
-!build/builder.h
+
 
 #project tasks and launch configurations for visual studio
 .vs/*.vs.json
@@ -29,3 +29,4 @@ avBuild.*
 CppProperties.json
 
 .clangd
+*.old

@@ -355,6 +355,7 @@ void testProcess() {
 }
 
 void testPipe() {
+	printf("testing Pipe\n");
 	AvProcessStartInfo info = AV_EMPTY;
 	avProcessStartInfoPopulate(&info, AV_CSTR("gcc.exe"), (AvString)AV_EMPTY, AV_CSTR("--version"));
 	AvProcessStartInfo findStr = AV_EMPTY;
@@ -391,7 +392,7 @@ void testEnvironment(){
 }
 
 void testBuild() {
-	
+	//testBuilder();
 }
 
 int main() {
@@ -402,10 +403,10 @@ int main() {
 	testThread();
 	testMutex();
 	testFile();
+	testPipe();
 	testString();
 	testPath("/");
 	testProcess();
-	testPipe();
 	testEnvironment();
 	testBuild();
 	printf("test completed\n");

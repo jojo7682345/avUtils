@@ -1,27 +1,24 @@
-avUtils {
-	type: LIB
-	flags: -std=c11 -Wall -ggdb -fPIC
-	source: [
-		src
-	]
-	include: [
-		include
-	]
+#!/usr/bin/avBuilder
+
+import global "std/c/stdc.project" {
+    buildStaticLibrary;
+    getSourceFiles as getSource;
 }
 
-avUtilsTest {
-	type: EXE 
-	flags: -std=c11 -Wall -ggdb -lm -Wl,-rpath,./lib
-	source: [
-		test/src
-	]
-	include: [
-		include
-	]
-	libdir: [
-		lib
-	]
-	lib: [
-		avUtils
-	]
+compiler = "gcc";
+linker = "ar";
+
+flags = "-std=c11 -Wall -ggdb -fPIC";
+archiverflags = "rcs";
+
+includes="include";
+
+sourceDir = "src";
+buildDir = "build";
+outDir = "lib";
+
+avUtils(){
+    perform {
+        buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
+    }
 }
