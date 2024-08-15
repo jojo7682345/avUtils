@@ -18,7 +18,13 @@ buildDir = "build";
 outDir = "lib";
 
 avUtils(){
+    var ret;
     perform {
-        buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
+        ret = buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
+    }
+    if(arraySize(ret)){
+        return 0;
+    }else{
+        return -1;
     }
 }
