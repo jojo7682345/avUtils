@@ -4,6 +4,10 @@ bool32 avCharIsWithinRange(char chr, char start, char end) {
     return (chr >= start) && (chr <= end);
 }
 
+bool32 avCharIsAlphanumeric(char chr){
+    return (avCharIsLetter(chr) || avCharIsNumber(chr));
+}
+
 bool32 avCharIsLetter(char chr) {
     return avCharIsLowercaseLetter(chr) || avCharIsUppercaseLetter(chr);
 }

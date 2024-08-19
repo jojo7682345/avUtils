@@ -8,6 +8,7 @@ C_SYMBOLS_START
 bool32 avCharIsWithinRange(char chr, char start, char end);
 
 bool32 avCharIsLetter(char chr);
+bool32 avCharIsAlphanumeric(char chr);
 bool32 avCharIsUppercaseLetter(char chr);
 bool32 avCharIsLowercaseLetter(char chr);
 
