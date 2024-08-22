@@ -189,7 +189,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
         .len = fullPath.len - (avStringEndsWith(fullPath, AV_CSTRA("/")) ? 1 : 0),
         .memory = fullPath.memory,
     };
-    avStringUnsafeCopy(&fullPath, &fullPathFixed);
+    avStringUnsafeCopy(&fullPath, fullPathFixed);
     avStringCopyToAllocator(fullPath, &path.path, &path.allocator);
     if(pathGetType(fullPath)!=AV_PATH_NODE_TYPE_DIRECTORY){
         goto pathNotDirectory;
