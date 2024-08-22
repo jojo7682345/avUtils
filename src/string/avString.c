@@ -698,8 +698,8 @@ uint64 avStringReplace(AvStringRef dst, AvString str, AvString sequence, AvStrin
 	return count;
 }
 
-void avStringUnsafeCopy(AvStringRef dst, AvStringRef src){
-	memcpy(dst, src, sizeof(AvString));
+void avStringUnsafeCopy(AvStringRef dst, AvString src){
+	memcpy(dst, &src, sizeof(AvString));
 }
 
 void avStringJoin_(AvStringRef dst, ...) {
