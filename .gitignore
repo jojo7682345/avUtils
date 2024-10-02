@@ -30,3 +30,5 @@ CppProperties.json
 
 .clangd
 *.old
+
+test/tokenizeTest

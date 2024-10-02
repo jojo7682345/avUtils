@@ -21,6 +21,7 @@ typedef struct StringDebugContext_T {
 static StringDebugContext debugContext;
 
 uint64 avCStringLength(const char* str) {
+	avAssert(str!=nullptr, "string cannot be null");
 	uint64 length = 0;
 	while (str[length++]) {} // loop until the termination character
 	return length - 1; // do not include the termination character
