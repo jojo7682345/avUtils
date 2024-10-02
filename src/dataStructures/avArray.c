@@ -93,7 +93,9 @@ void avArrayFreeAndDeallocate(AvArrayRef array, AvDeallocateElementCallback deal
     arrayFree(array);
 }
 void avArrayFreeAndDestroy(AvArrayRef array, AvDestroyElementCallback destroyHandle){
-    avArrayDestroyElements(array, destroyHandle);
+    if(array->count){
+        avArrayDestroyElements(array, destroyHandle);
+    }
     arrayFree(array);
 }
 void avArrayFree(AvArrayRef array){

@@ -8,7 +8,6 @@
 #include <AvUtils/avProcess.h>
 #include <AvUtils/process/avPipe.h>
 #include <AvUtils/avEnvironment.h>
-#include <AvUtils/builder/avBuilder.h>
 
 
 #include <stdio.h>
@@ -357,7 +356,7 @@ void testProcess() {
 void testPipe() {
 	printf("testing Pipe\n");
 	AvProcessStartInfo info = AV_EMPTY;
-	avProcessStartInfoPopulate(&info, AV_CSTR("gcc.exe"), (AvString)AV_EMPTY, AV_CSTR("--version"));
+	avProcessStartInfoPopulate(&info, AV_CSTR("gcc.exe"), (AvString)AV_EMPTY, AV_CSTRA("--version"));
 	AvProcessStartInfo findStr = AV_EMPTY;
 	avProcessStartInfoPopulate(&findStr, AV_CSTR("findstr"), AV_EMPTY_STRING, AV_CSTR("Free"));
 
@@ -404,8 +403,8 @@ int main() {
 	testMutex();
 	testFile();
 	testPipe();
-	testString();
 	testPath("/");
+	testString();
 	testProcess();
 	testEnvironment();
 	testBuild();

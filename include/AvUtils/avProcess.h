@@ -20,7 +20,7 @@ typedef struct AvProcessStartInfo {
 
 void avProcessStartInfoPopulate_(AvProcessStartInfo* info, AvString bin, AvString cwd, ...);
 void avProcessStartInfoPopulateARR(AvProcessStartInfo* info, AvString bin, AvString cwd, uint32 count, AvString* args);
-#define avProcessStartInfoPopulate(info, bin, cwd, ...) avProcessStartInfoPopulate_(info, bin, cwd, __VA_ARGS__, AV_STR(nullptr, 0))
+#define avProcessStartInfoPopulate(info, bin, cwd, ...) avProcessStartInfoPopulate_(info, bin, cwd __VA_OPT__(,) __VA_ARGS__, AV_STR(nullptr, 0))
 void avProcessStartInfoCreate(AvProcessStartInfo* info, AvString bin, AvString cwd, uint32 argCount, AvString* argValues);
 void avProcessStartInfoDestroy(AvProcessStartInfo* info);
 
