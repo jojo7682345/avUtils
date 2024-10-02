@@ -158,13 +158,13 @@ void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
-void avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
-void avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, va_list args);
+void __cdecl avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
+void __cdecl avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, va_list args);
 
-void avStringPrintf(AvString format, ...);
-void avStringPrintfVA(AvString format, va_list args);
+void __cdecl avStringPrintf(AvString format, ...);
+void  __cdecl avStringPrintfVA(AvString format, va_list args);
 
-uint32 avStringScanf(AvString format, AvString str, ...);
+uint32 __cdecl avStringScanf(AvString format, AvString str, ...);
 
 uint32 avStringSplitOnChar(AV_DS(AvArrayRef, AvString)substrings, char split, AvString str);
 uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvString str);

@@ -453,7 +453,21 @@ void avDynamicArrayAppend(AvDynamicArray dst, AvDynamicArray* src) {
 	if (dst->dataSize != (*src)->dataSize) {
 		return;
 	}
+	if(avDynamicArrayGetSize(*src)==0){
+		return;
+	}
+
 	avDynamicArrayTrim(dst);
+	if(avDynamicArrayGetSize(dst)==0){
+		void* buffer = avAllocate((*src)->dataSize * (*src)->count, "");
+		avDynamicArrayReadRange(buffer, (*src)->count, 0, (*src)->dataSize, 0, *src);
+		avDynamicArrayAddRange(buffer, (*src)->count, 0, (*src)->dataSize, dst);
+		avFree(buffer);
+		avDynamicArrayDestroy(*src);
+		*src = nullptr;
+		return;
+	}
+
 	dst->lastPage->next = (*src)->data;
 	(*src)->data->prev = dst->lastPage;
 	dst->count += (*src)->count;

@@ -25,12 +25,12 @@
 typedef uint64 PID;
 
 typedef struct AvProcess_T {
-    PID pid;
 #ifdef _WIN32
     STARTUPINFO siStartInfo;
     PROCESS_INFORMATION piProcInfo;
+    HANDLE handle;
 #else
-
+    PID pid;
 #endif
 } AvProcess_T;
 
@@ -164,16 +164,14 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
         commandLength += 1 + arg.len;
         });
     avStringMemoryAllocate(commandLength, &memory);
-    avStringMemoryStore(info.executable, 0, AV_STRING_FULL_LENGTH, &memory);
-    uint32 index = info.executable.len;
+    uint32 index = 0;
     avArrayForEachElement(AvString, arg, i, &info.args, {
-        avStringMemoryStore(AV_STR(" ", 1), index++, 1, &memory);
         avStringMemoryStore(arg, index, AV_STRING_FULL_LENGTH, &memory);
         index += arg.len;
+        avStringMemoryStore(AV_STR(" ", 1), index++, 1, &memory);
         });
     AvString cmd = AV_EMPTY;
     avStringFromMemory(&cmd, AV_STRING_WHOLE_MEMORY, &memory);
-
     int32 bSuccess = CreateProcessA(
         NULL,
         (char*)cmd.chrs,
@@ -195,20 +193,20 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
         return false;
     }
     CloseHandle(process->piProcInfo.hThread);
-    process->pid = (PID)(process->piProcInfo.hProcess);
+    process->handle = (process->piProcInfo.hProcess);
 
     avStringDebugContextEnd;
     return true;
 }
 
 static void killProcess(AvProcess process) {
-    TerminateProcess((HANDLE)(process->pid), 0);
+    TerminateProcess((HANDLE)(process->handle), 0);
 }
 
 
 bool32 waitForProcess(AvProcess process, int32* exitStatus) {
     DWORD result = WaitForSingleObject(
-        (HANDLE)process->pid,     // HANDLE hHandle,
+        (HANDLE)process->handle,     // HANDLE hHandle,
         INFINITE // DWORD  dwMilliseconds
     );
 
@@ -218,12 +216,12 @@ bool32 waitForProcess(AvProcess process, int32* exitStatus) {
         return false;
     }
 
-    if (GetExitCodeProcess((HANDLE)process->pid, (LPDWORD)exitStatus) == 0) {
+    if (GetExitCodeProcess((HANDLE)process->handle, (LPDWORD)exitStatus) == 0) {
         printf("could not get process exit code: %lu", GetLastError());
         return false;
     }
 
-    CloseHandle((HANDLE)process->pid);
+    CloseHandle((HANDLE)process->handle);
     return true;
 }
 

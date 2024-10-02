@@ -1,20 +1,22 @@
 #include <AvUtils/avEnvironment.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
-
+#include <unistd.h>
 #endif
 
 bool32 avChangeDirectory(AvString path) {
     AvString str = AV_EMPTY;
     avStringClone(&str, path);
 
+#ifndef _WIN32
     int ret = chdir(str.chrs);
-
+#else
+    int ret = SetCurrentDirectory(str.chrs) ? 0 : -1;
+#endif
     avStringFree(&str);
 
     return ret == 0;
@@ -26,7 +28,7 @@ bool32 avGetEnvironmentVariable(AvString variable, AvStringRef value) {
     avStringClone(&str, variable);
 
 #ifdef _WIN32
-    char buff[4096] = { };
+    char buff[4096] = { 0 };
     DWORD resultLengthInCharacters = GetEnvironmentVariable(str.chrs, buff, 4096);
     if (resultLengthInCharacters == 0){
         return false;

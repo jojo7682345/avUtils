@@ -11,6 +11,31 @@
 
 #ifdef _WIN32
 #include <windows.h>
+
+int mkdir(const char* dir, unsigned int mode ){
+    return CreateDirectory(dir, NULL);
+}
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
+#ifndef S_IRWXU
+#define S_IRWXU (0400|0200|0100)
+#endif
+
+#ifndef S_IRWXG 
+#define S_IRWXG ((0400|0200|0100) >> 3)
+#endif
+
+#ifndef S_IROTH 
+#define S_IROTH ((0400 >> 3) >> 3)
+#endif
+
+#ifndef S_IXOTH
+#define S_IXOTH ((0100 >> 3) >> 3)
+#endif
+
 #else
 #ifndef __USE_MISC
 #define __USE_MISC
@@ -43,14 +68,38 @@ static int mkdirs(const char *dir, unsigned int mode) {
     return mkdir(tmp, mode);
 }
 
+
+bool32 avGetCurrentDir(uint64 bufferSize, char* buffer){
+#ifndef _WIN32
+    return (getcwd(buffer,bufferSize) != NULL);
+#else
+    return (GetCurrentDirectory(bufferSize, buffer) != 0);
+#endif
+}
+
+int32 avChangeCurrentDir(AvString dir){
+    AvString tmpStr = AV_EMPTY;
+    avStringClone(&tmpStr, dir);
+
+    #ifndef _WIN32
+        int ret = chdir(tmpStr.chrs);
+    #else
+        int ret =  SetCurrentDirectory(tmpStr.chrs) ? 0 : -1;
+    #endif
+
+    avStringFree(&tmpStr);
+    return ret;
+}
+
 static AvPathNodeType pathGetType(AvString str) {
     AvString path = AV_EMPTY;
     avStringClone(&path, str);
 
+    AvPathNodeType type = AV_PATH_NODE_TYPE_NONE;
+#ifndef _WIN32
     struct stat buffer;
     int result = stat(path.chrs, &buffer);
 
-    AvPathNodeType type = AV_PATH_NODE_TYPE_NONE;
     if (result != 0) {
         type = AV_PATH_NODE_TYPE_NONE;
         goto typeFound;
@@ -60,15 +109,32 @@ static AvPathNodeType pathGetType(AvString str) {
         goto typeFound;
     }
     type = AV_PATH_NODE_TYPE_FILE;
+#else
+    DWORD attributes = GetFileAttributesA(path.chrs);
+    if (attributes == INVALID_FILE_ATTRIBUTES) {
+        type = AV_PATH_NODE_TYPE_NONE;
+        goto typeFound;
+    }
+
+    if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+        type = AV_PATH_NODE_TYPE_DIRECTORY;
+        goto typeFound;
+    }
+
+    type = AV_PATH_NODE_TYPE_FILE;
+#endif
 typeFound:
     avStringFree(&path);
     return type;
 }
 
+
+
 bool32 avDirectoryExists(AvString location){
     AvString tmpStr = AV_EMPTY;
     avStringClone(&tmpStr, location);
     bool32 ret = false;
+#ifndef _WIN32
     DIR* dir = opendir(tmpStr.chrs);
     if (dir) {
         ret = true;
@@ -78,6 +144,10 @@ bool32 avDirectoryExists(AvString location){
     } else {
         avAssert(false, "opendir failed");
     }
+#else
+    DWORD attributes = GetFileAttributesA(tmpStr.chrs);
+    ret = (attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY));
+#endif
     avStringFree(&tmpStr);
     return ret;
 }
@@ -125,13 +195,15 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
         goto pathNotDirectory;
     }
 
+    AvDynamicArray entries = nullptr;
+    avDynamicArrayCreate(0, sizeof(AvPathNode), &entries);
+
+#ifndef _WIN32
+
     DIR* dir = opendir(fullPath.chrs);
     if(!dir){
         goto pathNotFound;
     }
-
-    AvDynamicArray entries = nullptr;
-    avDynamicArrayCreate(0, sizeof(AvPathNode), &entries);
 
     struct dirent* entry = readdir(dir);
     while(entry){
@@ -172,6 +244,62 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
 
     closedir(dir);
 
+#else
+
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    AvString searchPath = {0};
+    avStringJoin(&searchPath, fullPath, AV_CSTR("\\*")); // Add wildcard to search directory contents
+
+    hFind = FindFirstFile(searchPath.chrs, &findFileData);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        avStringFree(&searchPath);
+        goto pathNotFound;
+    }
+
+    do {
+        // Skip the "." and ".." entries
+        if (strcmp(findFileData.cFileName, ".") == 0 || strcmp(findFileData.cFileName, "..") == 0) {
+            continue;
+        }
+
+        AvString entryName = {
+            .chrs = findFileData.cFileName,
+            .len = avCStringLength(findFileData.cFileName),
+            .memory = nullptr,
+        };
+
+        AvString entryPath = {0};
+        avStringJoin(&entryPath, fullPath, AV_CSTR("/"), entryName);
+
+        AvPathNodeType type = AV_PATH_NODE_TYPE_FILE;
+        if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            type = AV_PATH_NODE_TYPE_DIRECTORY;
+        }
+
+        AvPathNode node = {
+            .name = AV_EMPTY,
+            .type = type,
+        };
+
+        avStringCopyToAllocator(entryPath, &node.fullName, &path.allocator);
+        AvString fileName = {
+            .chrs = node.fullName.chrs + fullPath.len + 1,
+            .len = node.fullName.len - fullPath.len - 1,
+            .memory = nullptr,
+        };
+        memcpy(&node.name, &fileName, sizeof(AvString));
+        avStringFree(&entryPath);
+        avDynamicArrayAdd(&node, entries);
+
+    } while (FindNextFile(hFind, &findFileData) != 0);
+
+    FindClose(hFind);
+    avStringFree(&searchPath);
+
+#endif
+
     path.contentCount = avDynamicArrayGetSize(entries);
     if(path.contentCount){
         AvPathNode* content = avAllocatorAllocate(sizeof(AvPathNode)*path.contentCount, &path.allocator);
@@ -187,6 +315,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
     return true;
 
 pathNotFound:
+    avDynamicArrayDestroy(entries);
 pathNotDirectory:
     if(!root){
         avAllocatorDestroy(&path.allocator);
@@ -205,3 +334,4 @@ void avDirectoryClose(AvPathRef path){
     }
     avAllocatorDestroy(&path->allocator);
 }
+

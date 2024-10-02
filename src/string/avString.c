@@ -810,7 +810,7 @@ void avStringPrintln(AvString str) {
 
 
 //only %i, %u, %c supported
-uint32 avStringScanf(AvString format, AvString str, ...) {
+uint32 __cdecl avStringScanf(AvString format, AvString str, ...) {
 	va_list elems;
 	va_start(elems, str);
 	uint64 readIndex = 0;

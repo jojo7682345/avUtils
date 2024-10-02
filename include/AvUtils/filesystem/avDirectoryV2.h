@@ -33,6 +33,9 @@ bool32 avDirectoryExists(AvString location);
 uint32 avMakeDirectory(AvString location);
 uint32 avMakeDirectoryRecursive(AvString location);
 
+bool32 avGetCurrentDir(uint64 bufferSize, char* buffer);
+int32 avChangeCurrentDir(AvString path);
+
 bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef path);
 void avDirectoryClose(AvPathRef path);
 
