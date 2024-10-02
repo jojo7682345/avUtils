@@ -81,3 +81,85 @@ bool32 avTimeIsAfter(AvDateTime time, AvDateTime compare){
     }
     return !avTimeIsBefore(time, compare);
 }
+
+AvDateTime avTimeNow(){
+    time_t tim = time(NULL);
+    struct tm* now = localtime(&tim);
+
+    return (AvDateTime){
+        .second = now->tm_sec,
+        .minute = now->tm_min,
+        .hour = now->tm_hour,
+        .day = now->tm_mday,
+        .month = now->tm_mon,
+        .year = now->tm_year+ 1900
+    };
+}
+
+AvDateTime avTimeAdd(AvDateTime a, AvDateTime b){
+    struct tm aTm = {
+        .tm_year = a.year - 1900,
+        .tm_mon = a.month,
+        .tm_mday = a.day,
+        .tm_hour = a.hour,
+        .tm_min = a.minute,
+        .tm_sec = a.second,
+    };
+    struct tm bTm = {
+        .tm_year = b.year - 1900,
+        .tm_mon = b.month,
+        .tm_mday = b.day,
+        .tm_hour = b.hour,
+        .tm_min = b.minute,
+        .tm_sec = b.second,
+    };
+
+    time_t timeA = mktime(&aTm);
+    time_t timeB = mktime(&bTm);
+
+    time_t timeRes = timeA + timeB;
+    struct tm* rTm = localtime(&timeRes);
+
+    return (AvDateTime){
+        .year = rTm->tm_year + 1900,
+        .month = rTm->tm_mon,
+        .day = rTm->tm_mday,
+        .hour = rTm->tm_hour,
+        .minute = rTm->tm_min,
+        .second = rTm->tm_sec,
+    };
+}
+
+AvDateTime avTimeSub(AvDateTime a, AvDateTime b){
+    struct tm aTm = {
+        .tm_year = a.year - 1900,
+        .tm_mon = a.month,
+        .tm_mday = a.day,
+        .tm_hour = a.hour,
+        .tm_min = a.minute,
+        .tm_sec = a.second,
+    };
+    struct tm bTm = {
+        .tm_year = b.year - 1900,
+        .tm_mon = b.month,
+        .tm_mday = b.day,
+        .tm_hour = b.hour,
+        .tm_min = b.minute,
+        .tm_sec = b.second,
+    };
+
+    time_t timeA = mktime(&aTm);
+    time_t timeB = mktime(&bTm);
+
+    time_t timeRes = timeA - timeB;
+    struct tm* rTm = localtime(&timeRes);
+
+    return (AvDateTime){
+        .year = rTm->tm_year + 1900,
+        .month = rTm->tm_mon,
+        .day = rTm->tm_mday,
+        .hour = rTm->tm_hour,
+        .minute = rTm->tm_min,
+        .second = rTm->tm_sec,
+    };
+}

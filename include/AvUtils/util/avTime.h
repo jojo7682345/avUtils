@@ -34,5 +34,9 @@ bool32 avTimeIsEqual(AvDateTime time, AvDateTime compare);
 bool32 avTimeIsBefore(AvDateTime time, AvDateTime compare);
 bool32 avTimeIsAfter(AvDateTime time, AvDateTime compare);
 
+AvDateTime avTimeNow();
+AvDateTime avTimeAdd(AvDateTime a, AvDateTime b);
+AvDateTime avTimeSub(AvDateTime a, AvDateTime b);
+
 C_SYMBOLS_END
 #endif//__AV_TIME__

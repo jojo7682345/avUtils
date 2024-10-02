@@ -193,7 +193,7 @@ uint32 avDynamicArrayAddEmpty(void** data, AvDynamicArray dynamicArray){
 	return dynamicArray->count++;
 }
 
-uint32 avDynamicArrayAdd(void* data, AvDynamicArray dynamicArray) {
+uint32 avDynamicArrayAdd(const void* const data, AvDynamicArray dynamicArray) {
 	avAssert(data != NULL, "data cannot be a null pointer");
 
 	uint32 index = dynamicArray->count;
@@ -208,7 +208,7 @@ uint32 avDynamicArrayAdd(void* data, AvDynamicArray dynamicArray) {
 
 }
 
-uint32 avDynamicArrayAddRange(void* data, uint32 count, uint64 offset, uint64 stride, AvDynamicArray dynamicArray){
+uint32 avDynamicArrayAddRange(const void* const data, uint32 count, uint64 offset, uint64 stride, AvDynamicArray dynamicArray){
 	avAssert(data != NULL, "data cannot be a null pointer");
 
 	if(stride == AV_DYNAMIC_ARRAY_ELEMENT_SIZE){
@@ -227,7 +227,7 @@ uint32 avDynamicArrayAddRange(void* data, uint32 count, uint64 offset, uint64 st
 	return startIndex;
 }
 
-bool32 avDynamicArrayWrite(void* data, uint32 index, AvDynamicArray dynamicArray) {
+bool32 avDynamicArrayWrite(const void* const data, uint32 index, AvDynamicArray dynamicArray) {
 
 	Page* page = getPage(&index, dynamicArray);
 
@@ -244,7 +244,7 @@ bool32 avDynamicArrayWrite(void* data, uint32 index, AvDynamicArray dynamicArray
 	return true;
 }
 
-bool32 avDynamicArrayRead(void* data, uint32 index, AvDynamicArray dynamicArray) {
+bool32 avDynamicArrayRead(void* const data, uint32 index, AvDynamicArray dynamicArray) {
 
 	Page* page = getPage(&index, dynamicArray);
 
@@ -297,7 +297,7 @@ bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray) {
 	return true;
 }
 
-static void clearPage(Page* page, void* data, AvDynamicArray dynamicArray) {
+static void clearPage(Page* page, const void* const data, AvDynamicArray dynamicArray) {
 
 	if (data) {
 		for (uint32 i = 0; i < page->capacity; i++) {
@@ -310,7 +310,7 @@ static void clearPage(Page* page, void* data, AvDynamicArray dynamicArray) {
 	page->count = 0;
 }
 
-void avDynamicArrayClear(void* data, AvDynamicArray dynamicArray) {
+void avDynamicArrayClear(const void* const data, AvDynamicArray dynamicArray) {
 
 	Page* page = dynamicArray->data;
 	while (page) {
@@ -335,7 +335,7 @@ void avDynamicArrayReserve(uint32 count, AvDynamicArray dynamicArray) {
 	addPage(count, dynamicArray);
 }
 
-uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
+uint32 avDynamicArrayWriteRange(const void* const data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
 	if (count == 0) {
 		return 0;
 	}
@@ -356,7 +356,7 @@ uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 
 	return count;
 }
 
-uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
+uint32 avDynamicArrayReadRange(void* const data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray) {
 	if (count == 0) {
 		return 0;
 	}
@@ -418,7 +418,7 @@ void avDynamicArrayTrim(AvDynamicArray dynamicArray) {
 	}
 }
 
-bool32 avDynamicArrayContains(void* data, AvDynamicArray dynamicArray){
+bool32 avDynamicArrayContains(const void* const data, AvDynamicArray dynamicArray){
 	for(uint32 i = 0; i < dynamicArray->count; i++){
 		uint32 index = i;
 		Page* page = getPage(&index, dynamicArray);

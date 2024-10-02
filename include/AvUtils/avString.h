@@ -149,6 +149,8 @@ void avStringJoin_(AvStringRef dst, ...);
 
 void avStringAppend(AvStringRef dst, AvString src);
 
+bool32 avStringIsEmpty(AvString str);
+
 #define avStringMemoryStoreCharArraysVA(result, ...) avStringMemoryStoreCharArraysVA_(result, __VA_ARGS__, NULL);
 void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef result, ...);
 void avStringMemoryStoreCharArrays(AvStringMemoryRef result, uint32 count, const char* strs[]);

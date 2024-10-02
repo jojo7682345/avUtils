@@ -203,6 +203,46 @@ uint64 avFileGetSize(AvFile file) {
 	return *(uint32*)getFileStat(file, statProp(st_size));
 }
 
+bool32 avFileSeek(int64 offset, AvFile file){
+	if (file->status <= AV_FILE_STATUS_CLOSED) {
+		return 0;
+	}
+
+	if(fseek(file->filehandle, offset, SEEK_SET)==0){
+		return true;
+	}
+	return false;
+}
+
+bool32 avFileSeekEnd(AvFile file){
+	if (file->status <= AV_FILE_STATUS_CLOSED) {
+		return 0;
+	}
+
+	if(fseek(file->filehandle, 0, SEEK_END)==0){
+		return true;
+	}
+	return false;
+}
+
+bool32 avFileMovePos(int64 offset, AvFile file){
+	if (file->status <= AV_FILE_STATUS_CLOSED) {
+		return 0;
+	}
+
+	if(fseek(file->filehandle, offset, SEEK_CUR)==0){
+		return true;
+	}
+	return false;
+}
+
+uint64 avFileTellPos(AvFile file){
+	if (file->status <= AV_FILE_STATUS_CLOSED) {
+		return -1;
+	}
+	return ftell(file->filehandle);
+}
+
 uint64 avFileRead(void* dst, uint64 size, AvFile file) {
 
 	if ((file->status & (AV_FILE_STATUS_OPEN_READ | AV_FILE_STATUS_OPEN_UPDATE)) == 0) {

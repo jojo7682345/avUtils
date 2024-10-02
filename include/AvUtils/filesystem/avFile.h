@@ -91,6 +91,10 @@ bool32 avFileOpen(AvFile file, AvFileOpenOptions mode);
 uint64 avFileRead(void* dst, uint64 size, AvFile file);
 uint64 avFileWrite(void* src, uint64 size, AvFile file);
 
+bool32 avFileSeek(int64 offset, AvFile file);
+bool32 avFileSeekEnd(AvFile file);
+bool32 avFileMovePos(int64 offset, AvFile file);
+uint64 avFileTellPos(AvFile file);
 
 void avFileClose(AvFile file);
 

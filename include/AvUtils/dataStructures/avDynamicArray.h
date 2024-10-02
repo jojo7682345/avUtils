@@ -19,13 +19,13 @@ bool32 avDynamicArrayCreate(uint32 initialSize, uint64 dataSize, AvDynamicArray*
 
 void avDynamicArrayDestroy(AvDynamicArray dynamicArray);
 
-uint32 avDynamicArrayAdd(void* data, AvDynamicArray dynamicArray);
-bool32 avDynamicArrayWrite(void* data, uint32 index, AvDynamicArray dynamicArray);
-bool32 avDynamicArrayRead(void* data, uint32 index, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayAdd(const void* const data, AvDynamicArray dynamicArray);
+bool32 avDynamicArrayWrite(const void* const data, uint32 index, AvDynamicArray dynamicArray);
+bool32 avDynamicArrayRead(void* const data, uint32 index, AvDynamicArray dynamicArray);
 
 bool32 avDynamicArrayRemove(uint32 index, AvDynamicArray dynamicArray);
 
-void avDynamicArrayClear(void* data, AvDynamicArray dynamicArray);
+void avDynamicArrayClear(const void* const data, AvDynamicArray dynamicArray);
 
 /// <summary>
 /// reserves additional space. Trim the array first to make sure the reserved data is contiquous for better performance.
@@ -34,9 +34,9 @@ void avDynamicArrayClear(void* data, AvDynamicArray dynamicArray);
 /// <param name="dynamicArray"></param>
 void avDynamicArrayReserve(uint32 count, AvDynamicArray dynamicArray);
 
-uint32 avDynamicArrayWriteRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
-uint32 avDynamicArrayReadRange(void* data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
-uint32 avDynamicArrayAddRange(void* data, uint32 count, uint64 offset, uint64 stride, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayWriteRange(const void* const data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayReadRange(void* const data, uint32 count, uint64 offset, uint64 stride, uint32 startIndex, AvDynamicArray dynamicArray);
+uint32 avDynamicArrayAddRange(const void* const data, uint32 count, uint64 offset, uint64 stride, AvDynamicArray dynamicArray);
 
 void avDynamicArraySetDeallocateElementCallback(AvDeallocateElementCallback callback, AvDynamicArray dynamicArray);
 
@@ -50,7 +50,7 @@ uint64 avDynamicArrayGetDataSize(AvDynamicArray dynamicArray);
 void avDynamicArrayTrim(AvDynamicArray dynamicArray);
 void avDynamicArrayMakeContiguous(AvDynamicArray dynamicArray);
 
-bool32 avDynamicArrayContains(void* data, AvDynamicArray dynamicArray);
+bool32 avDynamicArrayContains(const void* const data, AvDynamicArray dynamicArray);
 
 void avDynamicArraySetAllowRelocation(bool32 allowRelocation, AvDynamicArray dynamicArray);
 bool32 avDynamicArrayGetAllowRelocation(AvDynamicArray dynamicArray);

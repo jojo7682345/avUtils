@@ -963,9 +963,10 @@ void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocat
 	avAssert(src.len != 0, "string length cannot be 0");
 	avAssert(src.chrs != nullptr, "string must have data");
 	avAssert(dst!=nullptr, "destination must be a valid reference");
-	avAssert(dst->memory==nullptr, "destination must be empty");
-	avAssert(dst->chrs==nullptr, "destination must be empty");
-	avAssert(dst->len==0, "destination must be empty");
+	
+	if(dst->chrs){
+		avStringFree(dst);
+	}
 
 	char* buffer = avAllocatorAllocate(src.len+1, allocator);
 	memcpy(buffer, src.chrs, src.len);
@@ -977,5 +978,7 @@ void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocat
 	memcpy(dst, &str, sizeof(AvString));
 }
 
-
+bool32 avStringIsEmpty(AvString str){
+	return str.chrs==nullptr || str.len == 0;
+}
 

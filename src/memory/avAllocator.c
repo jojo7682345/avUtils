@@ -66,4 +66,5 @@ void avAllocatorReset(AvAllocator* allocator) {
 }
 void avAllocatorDestroy(AvAllocator* allocator) {
     ALLOC_FUNCS(Destroy, ;, );
+    allocator->type = AV_ALLOCATOR_TYPE_NONE;
 }
