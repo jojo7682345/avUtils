@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #ifdef _WIN32
 #include <windows.h>
 
@@ -37,6 +36,7 @@ int mkdir(const char* dir, unsigned int mode ){
 #endif
 
 #else
+#include <unistd.h>
 #ifndef __USE_MISC
 #define __USE_MISC
 #endif
