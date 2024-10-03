@@ -249,7 +249,7 @@ static void printfValue(AvStream stream, struct PrintfValueProps props, va_list 
     avAssert(false, "unhandled case");
 }
 
-void __cdecl avStringPrintTo(const AvStream stream, AvString format, va_list args) {
+void avStringPrintTo(const AvStream stream, AvString format, va_list args) {
 
     enum PrintfState state = PRINTF_STATE_NORMAL;
     struct PrintfValueProps props = { 0 };
@@ -274,14 +274,14 @@ void __cdecl avStringPrintTo(const AvStream stream, AvString format, va_list arg
     }
 }
 
-void __cdecl avStringPrintfToFile(AvFile file, AvString format, ...){
+void avStringPrintfToFile(AvFile file, AvString format, ...){
     va_list args;
     va_start(args, format);
     avStringPrintfToFileVA(file,format,args);
     va_end(args);
 }
 
-void __cdecl avStringPrintfToFileVA(AvFile file, AvString format, va_list args){
+void avStringPrintfToFileVA(AvFile file, AvString format, va_list args){
     if((avFileGetStatus(file)&AV_FILE_STATUS_OPEN_WRITE)==0){
         return;
     }
@@ -289,39 +289,39 @@ void __cdecl avStringPrintfToFileVA(AvFile file, AvString format, va_list args){
     avStringPrintfToFileDescriptorVA(fd, format, args);
 }
 
-void __cdecl avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...) {
+void avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...) {
     va_list args;
     va_start(args, format);
     avStringPrintfToBufferVA(buffer,bufferSize, format, args);
     va_end(args);
 }
-void __cdecl avStringPrintfToBufferVA(char* const buffer, uint32 bufferSize, AvString format, va_list args) {
+void avStringPrintfToBufferVA(char* const buffer, uint32 bufferSize, AvString format, va_list args) {
     struct AvStream stream = avStreamCreate(buffer, bufferSize, AV_FILE_DESCRIPTOR_NULL);
     avStringPrintTo(&stream, format, args);
     avStreamFlush(&stream);
 }
 
-void __cdecl avStringPrintfToFileDescriptor(AvFileDescriptor out, AvString format, ...){
+void avStringPrintfToFileDescriptor(AvFileDescriptor out, AvString format, ...){
     va_list args;
     va_start(args, format);
     avStringPrintfToFileDescriptorVA(out, format, args);
     va_end(args);
 }
 
-void __cdecl avStringPrintfToFileDescriptorVA(AvFileDescriptor out, AvString format, va_list args) {
+void avStringPrintfToFileDescriptorVA(AvFileDescriptor out, AvString format, va_list args) {
     char buffer[8] = {0};
     struct AvStream stream = avStreamCreate(buffer, 8, out);
     avStringPrintTo(&stream, format, args);
     avStreamFlush(&stream);
 }
 
-void __cdecl avStringPrintf(AvString format, ...) {
+void avStringPrintf(AvString format, ...) {
     va_list args;
     va_start(args, format);
     avStringPrintfVA(format, args);
     va_end(args);
 }
 
-void __cdecl avStringPrintfVA(AvString format, va_list args){
+void avStringPrintfVA(AvString format, va_list args){
     avStringPrintfToFileDescriptorVA(avStdOut, format, args);
 }

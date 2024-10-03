@@ -243,8 +243,10 @@ bool32 waitForProcess(AvProcess process, int32* exitStatus) {
 
 #else
 
+#include <unistd.h>
+
 static void killProcess(AvProcess process) {
-    kill(process->pid, SIGTERM);
+    //kill(process->pid, SIGTERM);
 }
 
 static void configureProcess(AvProcessStartInfo info, AvProcess process) {
@@ -278,18 +280,23 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
             close(*info.input);
         }
 
-        char** args = avCallocate(info.args.count + 1, sizeof(char*), "args");
-        for (uint32 i = 0; i < info.args.count; i++) {
-            args[i] = (char*)((AvString*)info.args.data)[i].chrs;
+        char** args = avCallocate(info.args.count + 2, sizeof(char*), "args");
+        for (uint32 i = 1; i < info.args.count+1; i++) {
+            args[i] = (char*)((AvString*)info.args.data)[i-1].chrs;
         }
-        args[info.args.count] = NULL;
+        args[info.args.count+1] = NULL;
 
-        if (execvp(args[0], args) < 0) {
+        AvString binStr = AV_EMPTY;
+        avStringClone(&binStr, info.executable);
+        args[0] =(char*) binStr.chrs;
+        if (execvp(binStr.chrs, args) < 0) {
             printf("Could not exec child process: %s: %s\n", args[0], strerror(errno));
             avFree(args);
+            avStringFree(&binStr);
             exit(-1);
         }
 
+        avStringFree(&binStr);
         avFree(args);
         exit(0);
     } else {
