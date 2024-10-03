@@ -493,6 +493,10 @@ void avDynamicArrayClone(AvDynamicArray src, AvDynamicArray* dynamicArray) {
 	(*dynamicArray)->growSize = src->growSize;
 	(*dynamicArray)->deallocElement = src->deallocElement;
 	
+	if(src->count == 0){
+		return;
+	}
+
 	Page* page = src->data;
 	Page* dstPage = NULL; 
 	Page* startPage = NULL;
