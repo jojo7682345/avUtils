@@ -550,7 +550,7 @@ int32 avStringCompare(AvString strA, AvString strB) {
 		return 0;
 	}
 
-	return strA.len < strB.len ? 0 : 1;
+	return strA.len < strB.len ? -1 : 1;
 
 }
 
