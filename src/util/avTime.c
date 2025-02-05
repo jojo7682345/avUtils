@@ -96,33 +96,33 @@ AvDateTime avTimeNow(){
     };
 }
 
-AvDateTime avTimeAdd(AvDateTime a, AvDateTime b){
+AvDateTime avTimeAdd(AvDateTime a, AvDateTime b) {
+    // Initialize a 'struct tm' for 'a' date-time
     struct tm aTm = {
         .tm_year = a.year - 1900,
-        .tm_mon = a.month,
+        .tm_mon = a.month - 1, // months are 0-based in struct tm
         .tm_mday = a.day,
         .tm_hour = a.hour,
         .tm_min = a.minute,
         .tm_sec = a.second,
     };
-    struct tm bTm = {
-        .tm_year = b.year - 1900,
-        .tm_mon = b.month,
-        .tm_mday = b.day,
-        .tm_hour = b.hour,
-        .tm_min = b.minute,
-        .tm_sec = b.second,
-    };
 
-    time_t timeA = mktime(&aTm);
-    time_t timeB = mktime(&bTm);
+    // Add each component of 'b' to 'a'
+    aTm.tm_year += b.year;   // this handles both years as offsets
+    aTm.tm_mon += b.month;
+    aTm.tm_mday += b.day;
+    aTm.tm_hour += b.hour;
+    aTm.tm_min += b.minute;
+    aTm.tm_sec += b.second;
 
-    time_t timeRes = timeA + timeB;
+    // Normalize the time using mktime
+    time_t timeRes = mktime(&aTm);
     struct tm* rTm = localtime(&timeRes);
 
+    // Return the result as AvDateTime
     return (AvDateTime){
         .year = rTm->tm_year + 1900,
-        .month = rTm->tm_mon,
+        .month = rTm->tm_mon + 1, // Adjust back to 1-based month
         .day = rTm->tm_mday,
         .hour = rTm->tm_hour,
         .minute = rTm->tm_min,
@@ -130,33 +130,33 @@ AvDateTime avTimeAdd(AvDateTime a, AvDateTime b){
     };
 }
 
-AvDateTime avTimeSub(AvDateTime a, AvDateTime b){
+AvDateTime avTimeSub(AvDateTime a, AvDateTime b) {
+    // Initialize a 'struct tm' for 'a' date-time
     struct tm aTm = {
         .tm_year = a.year - 1900,
-        .tm_mon = a.month,
+        .tm_mon = a.month - 1, // months are 0-based in struct tm
         .tm_mday = a.day,
         .tm_hour = a.hour,
         .tm_min = a.minute,
         .tm_sec = a.second,
     };
-    struct tm bTm = {
-        .tm_year = b.year - 1900,
-        .tm_mon = b.month,
-        .tm_mday = b.day,
-        .tm_hour = b.hour,
-        .tm_min = b.minute,
-        .tm_sec = b.second,
-    };
 
-    time_t timeA = mktime(&aTm);
-    time_t timeB = mktime(&bTm);
+    // Subtract each component of 'b' from 'a'
+    aTm.tm_year -= b.year;
+    aTm.tm_mon -= b.month;
+    aTm.tm_mday -= b.day;
+    aTm.tm_hour -= b.hour;
+    aTm.tm_min -= b.minute;
+    aTm.tm_sec -= b.second;
 
-    time_t timeRes = timeA - timeB;
+    // Normalize the time using mktime
+    time_t timeRes = mktime(&aTm);
     struct tm* rTm = localtime(&timeRes);
 
+    // Return the result as AvDateTime
     return (AvDateTime){
         .year = rTm->tm_year + 1900,
-        .month = rTm->tm_mon,
+        .month = rTm->tm_mon + 1, // Adjust back to 1-based month
         .day = rTm->tm_mday,
         .hour = rTm->tm_hour,
         .minute = rTm->tm_min,
