@@ -39,5 +39,7 @@ int32 avChangeCurrentDir(AvString path);
 bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef path);
 void avDirectoryClose(AvPathRef path);
 
+
+
 C_SYMBOLS_END
 #endif//__AV_DIRECTORY__
