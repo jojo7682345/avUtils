@@ -317,6 +317,7 @@ void avDynamicArrayClear(const void* const data, AvDynamicArray dynamicArray) {
 		clearPage(page, data, dynamicArray);
 		page = page->next;
 	}
+	dynamicArray->count = 0;
 
 }
 
