@@ -5,8 +5,16 @@ C_SYMBOLS_START
 #include <AvUtils/avTypes.h>
 #include <AvUtils/dataStructures/avDynamicArray.h>
 
+struct AvDynamicAllocatorPage{
+    uint32 remainingSize;
+    void* start;
+    void* current;
+    struct AvDynamicAllocatorPage* previous;
+};
+
 typedef struct AvDynamicAllocator {
-    AvDynamicArray memory;
+    uint64 totalAllocatedSize;
+    struct AvDynamicAllocatorPage* current;
 } AvDynamicAllocator;
 
 void avDynamicAllocatorCreate(uint64 size, AvDynamicAllocator* allocator);

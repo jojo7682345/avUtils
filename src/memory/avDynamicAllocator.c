@@ -3,39 +3,104 @@
 #include <AvUtils/avLogging.h>
 #define AV_DYNAMIC_ARRAY_EXPOSE_MEMORY_LAYOUT
 #include <AvUtils/dataStructures/avDynamicArray.h>
+#include <AvUtils/avMath.h>
 
-void avDynamicAllocatorCreate(uint64 size, AvDynamicAllocator* allocator) {
-    (void)size;
-    avDynamicArrayCreate(0, 1, &allocator->memory);
-    avDynamicArraySetAllowRelocation(false, allocator->memory);
+#define AV_DYNAMIC_ALLOCATOR_ALIGNMENT 8
+#define AV_DYNAMIC_ALLOCATOR_INCREMENT_SIZE (1<<10)
+
+static void allocatePage(uint64 size, AvDynamicAllocator* allocator){
+    struct AvDynamicAllocatorPage* page = (struct AvDynamicAllocatorPage*)avCallocate(1, sizeof(struct AvDynamicAllocatorPage) + size, "");
+    page->start = (byte*)page + sizeof(struct AvDynamicAllocatorPage);
+    page->current = page->start;
+    page->remainingSize = size;
+    page->previous = allocator->current;
+    allocator->current = page;
+
+}
+
+static uint64 alignUp(uint64 size) {
+    return (size + (AV_DYNAMIC_ALLOCATOR_ALIGNMENT - 1))
+           & ~(AV_DYNAMIC_ALLOCATOR_ALIGNMENT - 1);
+}
+
+void avDynamicAllocatorCreate(uint64 initialPageSize, AvDynamicAllocator* allocator) {
+    
+    allocator->current = NULL;
+    allocator->totalAllocatedSize = 0;
+    if (initialPageSize) {
+        allocatePage(AV_MAX(nextPow2(alignUp(initialPageSize)), AV_DYNAMIC_ALLOCATOR_INCREMENT_SIZE), allocator);
+    }
+}
+
+static void* returnAllocatedSpace(uint64 size, struct AvDynamicAllocatorPage* page, AvDynamicAllocator* allocator){
+    void* ptr = page->current;
+    page->current = (byte*)page->current + size;
+    page->remainingSize -= size;
+    allocator->totalAllocatedSize += size;  
+    return ptr;
 }
 
 void* avDynamicAllocatorAllocate(uint64 size, AvDynamicAllocator* allocator) {
-    avAssert(size < (1ULL<<32), "single allocations can not exeed 32 bit size");
     avAssert(size != 0, "cannot allocate of size 0");
-    avDynamicArraySetGrowSize((uint32)size, allocator->memory);
-    byte null = 0;
-    uint32 index = avDynamicArrayAdd(&null, allocator->memory);
-    for(uint64 i = 1; i < size; i++){
-        avDynamicArrayAdd(&null, allocator->memory);
+
+    size = alignUp(size);
+
+    if(!allocator->current || size > allocator->current->remainingSize){
+        if(size > AV_DYNAMIC_ALLOCATOR_INCREMENT_SIZE){
+            allocatePage(nextPow2(size), allocator);
+        }else{
+            allocatePage(AV_DYNAMIC_ALLOCATOR_INCREMENT_SIZE, allocator);
+        }
     }
-    uint32 pageIndex = avDynamicArrayGetIndexPage(&index, allocator->memory);
-    avAssert(index == 0, "memory corrupted");
-    return avDynamicArrayGetPageDataPtr(pageIndex, allocator->memory);
+    return returnAllocatedSpace(size, allocator->current, allocator);
 }
 
 uint64 avDynamicAllocatorGetAllocatedSize(AvDynamicAllocator* allocator){
-    return avDynamicArrayGetSize(allocator->memory);
+    return allocator->totalAllocatedSize;
 }
 
 void avDynamicAllocatorReset(AvDynamicAllocator* allocator) {
-    avDynamicArrayClear(nullptr, allocator->memory);
-    avDynamicArraySetAllowRelocation(true, allocator->memory);
-    avDynamicArrayTrim(allocator->memory);
-    avDynamicArraySetAllowRelocation(false, allocator->memory);
+    
+    // free everything but the largest page
+
+    struct AvDynamicAllocatorPage* page = allocator->current;
+    if(!page){
+        allocator->totalAllocatedSize = 0;
+        return;
+    }
+
+    struct AvDynamicAllocatorPage* largestPage = page;
+    uint64 largestPageSize = largestPage->current - largestPage->start + largestPage->remainingSize;
+
+    while(page){
+        struct AvDynamicAllocatorPage* next = page->previous;
+        uint64 pageSize = page->remainingSize + (uint64)((byte*)page->current - (byte*)page->start);
+
+        if(pageSize > largestPageSize){
+            avFree(largestPage);
+            largestPage = page;
+            largestPageSize = pageSize;
+        }else{
+            avFree(page);
+        }
+        page = next;
+    }
+    largestPage->current = largestPage->start;
+    largestPage->remainingSize = largestPageSize;
+    largestPage->previous = NULL;
+    
+    allocator->totalAllocatedSize = 0;
+    allocator->current = largestPage;
 }
 
 void avDynamicAllocatorDestroy(AvDynamicAllocator* allocator) {
-    avDynamicArrayDestroy(allocator->memory);
-    allocator->memory = nullptr;
+    struct AvDynamicAllocatorPage* page = allocator->current;
+
+    while(page){
+        struct AvDynamicAllocatorPage* next = page->previous;
+        avFree(page);
+        page = next;
+    }
+
+    memset(allocator, 0, sizeof(AvDynamicAllocator));
 }

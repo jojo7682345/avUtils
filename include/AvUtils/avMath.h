@@ -10,5 +10,8 @@ C_SYMBOLS_START
 
 #define AV_CLAMP(x, min, max) (AV_MIN(AV_MAX((x),(min)),(max)))
 
+uint32 nextPow2(uint32 x);
+uint64 nextPow2L(uint64 x);
+
 C_SYMBOLS_END
 #endif//__AV_MATH__
