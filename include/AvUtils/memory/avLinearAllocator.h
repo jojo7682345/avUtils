@@ -27,6 +27,7 @@ uint64 avLinearAllocatorGetAllocatedSize(AvLinearAllocator* allocator);
 
 uint64 avLinearAllocatorGetRemainingSize(AvLinearAllocator allocator);
 
+void avLinearAllocatorReadAll(void* data, AvLinearAllocator allocator);
 
 C_SYMBOLS_END
 #endif//__AV_LINEAR_ALLOCATOR__

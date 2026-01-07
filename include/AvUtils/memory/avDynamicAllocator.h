@@ -27,6 +27,7 @@ void avDynamicAllocatorReset(AvDynamicAllocator* allocator);
 
 void avDynamicAllocatorDestroy(AvDynamicAllocator* allocator);
 
+void avDynamicAllocatorReadAll(void* data, AvDynamicAllocator allocator);
 
 C_SYMBOLS_END
 #endif//__AV_DYNAMIC_ALLOCATOR__

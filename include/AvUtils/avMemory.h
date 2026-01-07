@@ -23,5 +23,8 @@ void* avReallocate_(void* data, uint64 size, const char* message, uint line, con
 void avFree_(void* data, uint line, const char* func, const char* file);
 #define avFree(data) avFree_(data, __LINE__, __func__, __FILE__)
 
+void avMemcpy(void* restrict dst, const void* restrict src, uint64 size);
+void avMemset(void* restrict dst, byte value, uint64 size);
+
 C_SYMBOLS_END
 #endif //__AV_MEMORY__

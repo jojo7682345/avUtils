@@ -67,3 +67,7 @@ uint64 avLinearAllocatorGetAllocatedSize(AvLinearAllocator* allocator){
 uint64 avLinearAllocatorGetRemainingSize(AvLinearAllocator allocator) {
     return allocator.allocatedSize - allocator.current;
 }
+
+void avLinearAllocatorReadAll(void* data, AvLinearAllocator allocator){
+    avMemcpy(data, allocator.base, allocator.allocatedSize);
+}

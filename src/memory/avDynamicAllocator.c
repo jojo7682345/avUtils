@@ -102,5 +102,38 @@ void avDynamicAllocatorDestroy(AvDynamicAllocator* allocator) {
         page = next;
     }
 
-    memset(allocator, 0, sizeof(AvDynamicAllocator));
+    allocator->current = NULL;
+    allocator->totalAllocatedSize = 0;
+}
+
+void avDynamicAllocatorReadAll(void* data, AvDynamicAllocator allocator){
+    avAssert(data!=NULL, "there must be a destination");
+
+    if(!data || !allocator.current){
+        return;
+    }
+
+    uint32 pageCount = 0;
+    struct AvDynamicAllocatorPage* page = allocator.current;
+    while(page){
+        pageCount++;
+        page = page->previous;
+    }
+
+    struct AvDynamicAllocatorPage* pages[pageCount];
+    page = allocator.current;
+    for(uint64 i = 0; i < pageCount; i++){
+        pages[i] = page;
+        page = page->previous;
+    }
+
+    byte* dst = (byte*) data;
+    for(uint64 i = (uint64)pageCount; i > 0; i--){
+        struct AvDynamicAllocatorPage* p = pages[i];
+        uint64 usedSize = (uint64)((byte*)p->current - (byte*)(p->start));
+        if(usedSize > 0){
+            avMemcpy(dst, p->start, usedSize);
+            dst += usedSize;
+        }
+    }
 }

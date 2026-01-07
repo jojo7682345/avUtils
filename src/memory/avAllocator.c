@@ -49,10 +49,10 @@ bool32 avAllocatorTransform(AvAllocatorType srcType, AvAllocatorType dstType, Av
     
     switch(srcType){
         case AV_ALLOCATOR_TYPE_DYNAMIC:
-            avDynamicArrayReadRange(data, avAllocatorGetAllocatedSize(allocator), 0, 1, 0, allocator->dynamicAllocator.memory);
+            avDynamicAllocatorReadAll(data, allocator->dynamicAllocator);
         break;
         case AV_ALLOCATOR_TYPE_LINEAR:
-            memcpy(data, allocator->linearAllocator.base, avAllocatorGetAllocatedSize(allocator));
+            avLinearAllocatorReadAll(data, allocator->linearAllocator);
         break;
         default:
             avAssert(0, "developer messed up by forgetting break statement");
