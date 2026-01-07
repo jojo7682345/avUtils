@@ -34,6 +34,9 @@ bool32 avTimeIsEqual(AvDateTime time, AvDateTime compare);
 bool32 avTimeIsBefore(AvDateTime time, AvDateTime compare);
 bool32 avTimeIsAfter(AvDateTime time, AvDateTime compare);
 
+int64 avTimeConvertToNumber(AvDateTime time);
+AvDateTime avTimeConvertFromNumber(int64 number);
+
 AvDateTime avTimeNow();
 AvDateTime avTimeAdd(AvDateTime a, AvDateTime b);
 AvDateTime avTimeSub(AvDateTime a, AvDateTime b);

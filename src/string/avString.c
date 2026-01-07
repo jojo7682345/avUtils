@@ -171,14 +171,14 @@ void avStringFree(AvStringRef str) {
 	memset(str, 0, sizeof(AvString));
 }
 
-void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory) {
+void avStringMemoryHeapAllocate_(uint64 capacity, AvStringHeapMemory* memory, const char* file, uint32 line) {
 	avAssert(memory != nullptr, "invalid heap memory pointer");
 	(*memory) = avCallocate(1, sizeof(AvStringMemory), "allocating string memory on heap");
 	(*memory)->properties.heapAllocated = true;
-	avStringMemoryAllocate(capacity, *memory);
+	avStringMemoryAllocate_(capacity, *memory, file, line);
 }
 
-void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory) {
+void avStringMemoryAllocate_(uint64 capacity, AvStringMemoryRef memory, const char* file, uint32 line) {
 	avAssert(memory != nullptr, "invalid memory reference");
 	avAssert(memory->data == nullptr, "string memory already allocated");
 	avAssert(memory->capacity == 0, "string memory already allocated");
@@ -188,7 +188,8 @@ void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory) {
 	memory->capacity = capacity;
 	memory->data = avCallocate(capacity + NULL_TERMINATOR_SIZE, 1, "allocating string data");
 	memory->referenceCount = 0;
-
+	memory->properties.allocationLine = line;
+	memory->properties.allocationFile = file;
 #ifndef NDEBUG
 	if (debugContext) {
 		if(!memory->properties.heapAllocated){
@@ -324,7 +325,12 @@ void avStringDebugContextEnd_() {
 		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
-		avStringPrintf(AV_CSTR("allocated string memory containing \"%s\" has not been freed: %u remaining references\n"), AV_STR(stringMemory->data, stringMemory->capacity), stringMemory->referenceCount);
+		avStringPrintf(AV_CSTR("allocated string memory containing \"%S\" has not been freed: %u remaining references, allocated at line %i, %s\n"), 
+			AV_STR(stringMemory->data, stringMemory->capacity), 
+			stringMemory->referenceCount, 
+			stringMemory->properties.allocationLine, 
+			stringMemory->properties.allocationFile
+		);
 	}
 	avDynamicArrayDestroy(debugContext->allocatedMemory);
 
@@ -948,9 +954,7 @@ uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvS
 void avStringFlip(AvStringRef str) {
 	avAssert(str != nullptr, "string must be a valid reference");
 	AvString refString = AV_EMPTY;
-	if (str->memory == nullptr) {
-		avStringClone(str, *str);
-	}
+	avStringClone(str, *str);
 	avStringClone(&refString, *str);
 
 	for (uint64 i = 0; i < str->len; i++) {
@@ -983,3 +987,22 @@ bool32 avStringIsEmpty(AvString str){
 	return str.chrs==nullptr || str.len == 0;
 }
 
+void avStringTrim(AvStringRef str){
+	avAssert(str != nullptr, "string must be a valid reference");
+	avStringClone(str, *str);
+	uint64 writeIndex = 0;
+	uint64 lastNonWhitespace = 0;
+	for (uint64 readIndex = 0; readIndex < str->len; readIndex++) {
+		char c = str->memory->data[readIndex];
+		if(avCharIsWhiteSpace(c) && writeIndex==0){
+			continue;
+		}
+		
+		str->memory->data[writeIndex++] = c;
+		
+		if(!avCharIsWhiteSpace(c)) {
+			lastNonWhitespace = writeIndex;
+		}
+	}
+	avStringUnsafeCopy(str, (AvString){.chrs = str->memory->data, .len=lastNonWhitespace, .memory = str->memory});
+}

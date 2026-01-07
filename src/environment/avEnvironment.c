@@ -30,6 +30,7 @@ bool32 avGetEnvironmentVariable(AvString variable, AvStringRef value) {
 #ifdef _WIN32
     char buff[4096] = { 0 };
     DWORD resultLengthInCharacters = GetEnvironmentVariable(str.chrs, buff, 4096);
+    avStringFree(&str);
     if (resultLengthInCharacters == 0){
         return false;
     }

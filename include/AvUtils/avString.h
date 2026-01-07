@@ -18,6 +18,8 @@ C_SYMBOLS_START
 typedef struct AvStringMemoryProperties {
 	bool8 heapAllocated;
 	uint32 contextAllocationIndex; // for debugging purposes
+	uint32 allocationLine;
+	const char* allocationFile;
 	void* debugContext;
 } AvStringMemoryProperties;
 typedef struct AvStringMemory {
@@ -69,14 +71,17 @@ uint64 avCStringLength(const char* str);
 /// @brief allocate the handle for the string memory on the heap
 /// @param capacity the amound of characters t
 /// @param memory pointer to a handle to the string memory
-void avStringMemoryHeapAllocate(uint64 capacity, AvStringHeapMemory* memory);
+void avStringMemoryHeapAllocate_(uint64 capacity, AvStringHeapMemory* memory, const char* file, uint32 line);
+#define avStringMemoryHeapAllocate(capacity, memory) avStringMemoryHeapAllocate_(capacity, memory, __FILE__, __LINE__)
 
 void avStringMemoryClone(AvStringMemoryRef* dst, AvStringMemory src);
 
 /// @brief allocates the data for a string 
 /// @param capacity the amound of characters to allocate
 /// @param memory reference to the string memory
-void avStringMemoryAllocate(uint64 capacity, AvStringMemoryRef memory);
+void avStringMemoryAllocate_(uint64 capacity, AvStringMemoryRef memory, const char* file, uint32 line);
+#define avStringMemoryAllocate(capacity, memory) avStringMemoryAllocate_(capacity, memory, __FILE__, __LINE__)
+
 
 /// @brief resizes the string memory
 /// @param capacity the new capacity

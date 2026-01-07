@@ -38,7 +38,7 @@ void avTimeConvertToString(AvDateTime time, AvStringRef result, AvDateFormat for
     tm.tm_min = time.minute;
     tm.tm_hour = time.hour;
     tm.tm_mday = time.day;
-    tm.tm_mon = time.month;
+    tm.tm_mon = time.month - 1;
     tm.tm_year = time.year - 1900;
     AvStringHeapMemory str;
     avStringMemoryHeapAllocate(formats[format].size, &str);
@@ -86,12 +86,16 @@ AvDateTime avTimeNow(){
     time_t tim = time(NULL);
     struct tm* now = localtime(&tim);
 
+    if (!now) {
+        return (AvDateTime){0};  // fallback on failure
+    }
+
     return (AvDateTime){
         .second = now->tm_sec,
         .minute = now->tm_min,
         .hour = now->tm_hour,
         .day = now->tm_mday,
-        .month = now->tm_mon,
+        .month = now->tm_mon + 1,
         .year = now->tm_year+ 1900
     };
 }
@@ -109,7 +113,7 @@ AvDateTime avTimeAdd(AvDateTime a, AvDateTime b) {
 
     // Add each component of 'b' to 'a'
     aTm.tm_year += b.year;   // this handles both years as offsets
-    aTm.tm_mon += b.month;
+    aTm.tm_mon += b.month - 1;
     aTm.tm_mday += b.day;
     aTm.tm_hour += b.hour;
     aTm.tm_min += b.minute;
@@ -143,7 +147,7 @@ AvDateTime avTimeSub(AvDateTime a, AvDateTime b) {
 
     // Subtract each component of 'b' from 'a'
     aTm.tm_year -= b.year;
-    aTm.tm_mon -= b.month;
+    aTm.tm_mon -= b.month - 1;
     aTm.tm_mday -= b.day;
     aTm.tm_hour -= b.hour;
     aTm.tm_min -= b.minute;
@@ -161,5 +165,38 @@ AvDateTime avTimeSub(AvDateTime a, AvDateTime b) {
         .hour = rTm->tm_hour,
         .minute = rTm->tm_min,
         .second = rTm->tm_sec,
+    };
+}
+
+int64 avTimeConvertToNumber(AvDateTime time){
+    struct tm aTm = {
+        .tm_year = time.year - 1900,
+        .tm_mon = time.month - 1,
+        .tm_mday = time.day,
+        .tm_hour = time.hour,
+        .tm_min = time.minute,
+        .tm_sec = time.second,
+    };
+
+    // Normalize the time using mktime
+    time_t timeRes = mktime(&aTm);
+    return (int64)timeRes;
+}
+
+AvDateTime avTimeConvertFromNumber(int64 number) {
+    time_t tim = (time_t)number;
+    struct tm* t = localtime(&tim);
+
+    if (!t) {
+        return (AvDateTime){0};  // fallback on failure
+    }
+
+    return (AvDateTime){
+        .second = t->tm_sec,
+        .minute = t->tm_min,
+        .hour   = t->tm_hour,
+        .day    = t->tm_mday,
+        .month  = t->tm_mon + 1,      // 0–11 → 1–12
+        .year   = t->tm_year + 1900
     };
 }

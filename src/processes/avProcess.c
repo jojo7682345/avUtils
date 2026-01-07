@@ -263,7 +263,7 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
     PID cpid = fork();
     
     if (cpid < 0) {
-        avStringPrintf(AV_CSTR("Could not fork child process: %s: %s\n"), info.executable, strerror(errno));
+        avStringPrintf(AV_CSTR("Could not fork child process: %S: %s\n"), info.executable, strerror(errno));
         return false;
     }
 

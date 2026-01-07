@@ -26,6 +26,7 @@ enum PrintfType {
 
     PRINTF_TYPE_CHAR = -1,
     PRINTF_TYPE_STRING = -2,
+    PRINTF_TYPE_CSTR = -3,
 };
 
 enum PrintfWidth {
@@ -78,6 +79,9 @@ static bool32 processValue(const AvStream stream, struct PrintfValueProps* props
         props->type = PRINTF_TYPE_CHAR;
         break;
     case 's':
+        props->type = PRINTF_TYPE_CSTR;
+        break;
+    case 'S':
         props->type = PRINTF_TYPE_STRING;
         break;
     case 'p':
@@ -146,38 +150,38 @@ static void printfUint(AvStream stream, uint32 width, uint64 value, uint8 base, 
     }
 }
 
-static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, va_list args, uint64* value, bool32* valueSign) {
+static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, va_list* args, uint64* value, bool32* valueSign) {
 
     uint64 halfway = 0;
     switch (width) {
     case PRINTF_WIDTH_8:
-        *value = isSigned ? va_arg(args, int32) : va_arg(args, uint32);
+        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
         halfway = 0x80;
         break;
     case PRINTF_WIDTH_16:
-        *value = isSigned ? va_arg(args, int32) : va_arg(args, uint32);
+        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
         halfway = 0x8000;
         break;
     case PRINTF_WIDTH_DEFAULT:
     case PRINTF_WIDTH_32:
-        *value = isSigned ? va_arg(args, int32) : va_arg(args, uint32);
+        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
         halfway = 0x80000000;
         break;
     case PRINTF_WIDTH_64:
-        *value = isSigned ? va_arg(args, int64) : va_arg(args, uint64);
+        (*value) = isSigned ? (uint64)va_arg(*args, int64) : (uint64)va_arg(*args, uint64);
         halfway = 0x8000000000000000;
         break;
     }
 
     if (valueSign) {
-        *valueSign = (*value >= halfway) ? 1 : 0;
+        (*valueSign) = ((*value) >= halfway) ? 1 : 0;
         if (*valueSign) {
-            *value = (~(*value) + 1) & (halfway - 1);
+            (*value) = (~(*value) + 1) & (halfway - 1);
         }
     }
 }
 
-static void printfValue(AvStream stream, struct PrintfValueProps props, va_list args) {
+static void printfValue(AvStream stream, struct PrintfValueProps props, va_list* args) {
     // for integers
     if (props.type >= 0) {
 
@@ -223,22 +227,22 @@ static void printfValue(AvStream stream, struct PrintfValueProps props, va_list 
     //for other
     if (props.type == PRINTF_TYPE_CHAR) {
         pad(stream, AV_MAX((int64)props.width - (int64)1, 0));
-        char c = va_arg(args, int);
+        char c = va_arg(*args, int);
         avStreamPutC(c, stream);
         return;
     }
 
-    if (props.type == PRINTF_TYPE_STRING) {
-        if (props.zeroPad) {
-            const char* str = va_arg(args, const char*);
-            uint64 len = strlen(str);
-            pad(stream, AV_MAX((int64)props.width - (int64)len, 0));
-            for (uint64 i = 0; i < len; i++) {
-                avStreamPutC(str[i], stream);
-            }
-            return;
+    if (props.type == PRINTF_TYPE_CSTR) {
+        const char* str = va_arg(*args, const char*);
+        uint64 len = strlen(str);
+        pad(stream, AV_MAX((int64)props.width - (int64)len, 0));
+        for (uint64 i = 0; i < len; i++) {
+            avStreamPutC(str[i], stream);
         }
-        AvString str = va_arg(args, AvString);
+        return;
+    }
+    if (props.type == PRINTF_TYPE_STRING) {
+        AvString str = va_arg(*args, AvString);
         pad(stream, AV_MAX((int64)props.width - (int64)str.len, 0));
         for (uint64 i = 0; i < str.len; i++) {
             avStreamPutC(str.chrs[i], stream);
@@ -266,7 +270,7 @@ void avStringPrintTo(const AvStream stream, AvString format, va_list args) {
             break;
         case PRINTF_STATE_VALUE:
             if (processValue(stream, &props, c)) {
-                printfValue(stream, props, args);
+                printfValue(stream, props, &args);
                 state = PRINTF_STATE_NORMAL;
             }
             break;

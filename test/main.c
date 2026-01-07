@@ -238,8 +238,8 @@ void testString() {
 
 	avArrayFree(&strings);
 
-	avStringPrintf(AV_CSTR("%hu %08hi %x %p\n%c %5s %09s\n"), 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234"), "1234");
-	printf("%hu %08hi %x %p\n%c %5s %9s\n", 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234").chrs, "1234");
+	avStringPrintf(AV_CSTR("%hu %08hi %x %p\n%c %5S %09s\n"), 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234"), "1234");
+	printf("%hu %08hi %x %p\n%c %5S %9s\n", 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234").chrs, "1234");
 
 	avStringDebugContextEnd;
 }
