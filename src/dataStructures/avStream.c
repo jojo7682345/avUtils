@@ -36,8 +36,13 @@ void avStreamPutC(char chr, AvStream stream) {
 
     stream->buffer[stream->pos] = chr;
     stream->pos += 1;
+    stream->totalSize += 1;
 }
 
 void avStreamFlush(AvStream stream) {
     avStreamDiscard(stream);
+}
+
+uint64 avStreamGetWrittenSize(AvStream stream){
+    return stream->totalSize;
 }

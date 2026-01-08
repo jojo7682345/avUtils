@@ -11,6 +11,7 @@ typedef struct AvStream {
     byte* const buffer;
     const uint64 size;
     uint64 pos;
+    uint64 totalSize;
 }* AvStream;
 
 struct AvStream avStreamCreate(void* buffer, uint64 size, const AvFileDescriptor discard);
@@ -20,6 +21,8 @@ void avStreamDiscard(AvStream stream);
 void avStreamPutC(char chr, AvStream stream);
 
 void avStreamFlush(AvStream stream);
+
+uint64 avStreamGetWrittenSize(AvStream stream);
 
 C_SYMBOLS_END
 #endif//__AV_STREAM__

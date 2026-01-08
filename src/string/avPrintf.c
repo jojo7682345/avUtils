@@ -293,16 +293,18 @@ void avStringPrintfToFileVA(AvFile file, AvString format, va_list args){
     avStringPrintfToFileDescriptorVA(fd, format, args);
 }
 
-void avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...) {
+uint32 avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...) {
     va_list args;
     va_start(args, format);
-    avStringPrintfToBufferVA(buffer,bufferSize, format, args);
+    uint32 size = avStringPrintfToBufferVA(buffer,bufferSize, format, args);
     va_end(args);
+    return size;
 }
-void avStringPrintfToBufferVA(char* const buffer, uint32 bufferSize, AvString format, va_list args) {
+uint32 avStringPrintfToBufferVA(char* const buffer, uint32 bufferSize, AvString format, va_list args) {
     struct AvStream stream = avStreamCreate(buffer, bufferSize, AV_FILE_DESCRIPTOR_NULL);
     avStringPrintTo(&stream, format, args);
     avStreamFlush(&stream);
+    return avStreamGetWrittenSize(&stream);
 }
 
 void avStringPrintfToFileDescriptor(AvFileDescriptor out, AvString format, ...){

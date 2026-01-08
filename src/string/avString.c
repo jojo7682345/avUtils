@@ -325,11 +325,11 @@ void avStringDebugContextEnd_() {
 		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
-		avStringPrintf(AV_CSTR("allocated string memory containing \"%S\" has not been freed: %u remaining references, allocated at line %i, %s\n"), 
+		avStringPrintf(AV_CSTR("allocated string memory containing \"%S\" has not been freed: %u remaining references, allocated at %s:%i\n"), 
 			AV_STR(stringMemory->data, stringMemory->capacity), 
 			stringMemory->referenceCount, 
-			stringMemory->properties.allocationLine, 
-			stringMemory->properties.allocationFile
+			stringMemory->properties.allocationFile,
+			stringMemory->properties.allocationLine
 		);
 	}
 	avDynamicArrayDestroy(debugContext->allocatedMemory);

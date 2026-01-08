@@ -165,8 +165,8 @@ void avStringPrintData(AvString str);
 void avStringPrintLn(AvString str);
 void avStringPrintln(AvString str);
 
-void avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
-void avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, va_list args);
+uint32 avStringPrintfToBuffer(char* buffer, uint32 bufferSize, AvString format, ...);
+uint32 avStringPrintfToBufferVA(char* buffer, uint32 bufferSize, AvString format, va_list args);
 
 void avStringPrintf(AvString format, ...);
 void avStringPrintfVA(AvString format, va_list args);
