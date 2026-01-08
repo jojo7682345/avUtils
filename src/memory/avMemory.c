@@ -77,7 +77,7 @@ __attribute__((optimize("O2")))
 void avMemset(void* restrict dst, byte value, uint64 size) {
     byte* d = (byte*)dst;
 
-    while (((uintptr_t)d & 7) && size) {
+    while (((uint64)d & 7) && size) {
         *d++ = value;
         size--;
     }

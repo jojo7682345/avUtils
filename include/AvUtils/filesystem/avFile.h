@@ -65,7 +65,7 @@ typedef struct AvFileNameProperties {
 void avFileBuildPathVAR_(const char* fileName, AvStringRef filePath, ...);
 void avFileBuildPathARR(const char* fileName, AvStringRef filePath, uint32 directoryCount, AvString direcotries[]);
 
-void avFileHandleCreate(AvString filePath, AvFile* file);
+AvFile avFileHandleCreate(AvString filePath);
 
 AvFileNameProperties* avFileHandleGetFileNameProperties(AvFile file);
 

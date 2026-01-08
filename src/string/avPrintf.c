@@ -4,6 +4,7 @@
 #include <AvUtils/avMath.h>
 #include <AvUtils/filesystem/avFile.h>
 #include <AvUtils/dataStructures/avStream.h>
+#include <AvUtils/avMemory.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +46,20 @@ struct PrintfValueProps {
     bool8 alwaysShowSign;
 };
 
+union PrintfValue{
+    uint64 u;
+    int64 i;
+    char c;
+    const char* cstr;
+    AvString str;
+    void* ptr;
+};
+
+struct PrintfArg{
+    union PrintfValue value;
+    struct PrintfValueProps props;
+};
+
 static bool32 processValue(const AvStream stream, struct PrintfValueProps* props, char c) {
     if (c == '%') {
         avStreamPutC('%', stream);
@@ -60,41 +75,17 @@ static bool32 processValue(const AvStream stream, struct PrintfValueProps* props
         return false;
     }
     switch (c) {
-    case 'i':
-        props->type = PRINTF_TYPE_INT;
-        break;
-    case 'u':
-        props->type = PRINTF_TYPE_UINT;
-        break;
-    case 'x':
-        props->type = PRINTF_TYPE_HEX_LOWERCASE;
-        break;
-    case 'X':
-        props->type = PRINTF_TYPE_HEX_UPPERCASE;
-        break;
-    case 'b':
-        props->type = PRINTF_TYPE_BIN;
-        break;
-    case 'c':
-        props->type = PRINTF_TYPE_CHAR;
-        break;
-    case 's':
-        props->type = PRINTF_TYPE_CSTR;
-        break;
-    case 'S':
-        props->type = PRINTF_TYPE_STRING;
-        break;
-    case 'p':
-        props->type = PRINTF_TYPE_POINTER;
-        break;
-
-
-    case 'h':
-        props->length = AV_CLAMP(props->length - 1, PRINTF_WIDTH_8, PRINTF_WIDTH_64);
-        return false;
-    case 'l':
-        props->length = AV_CLAMP(props->length + 1, PRINTF_WIDTH_8, PRINTF_WIDTH_64);
-        return false;
+    case 'i': props->type = PRINTF_TYPE_INT; break;
+    case 'u': props->type = PRINTF_TYPE_UINT; break;
+    case 'x': props->type = PRINTF_TYPE_HEX_LOWERCASE; break;
+    case 'X': props->type = PRINTF_TYPE_HEX_UPPERCASE; break;
+    case 'b': props->type = PRINTF_TYPE_BIN; break;
+    case 'c': props->type = PRINTF_TYPE_CHAR; break;
+    case 's': props->type = PRINTF_TYPE_CSTR; break;
+    case 'S': props->type = PRINTF_TYPE_STRING; break;
+    case 'p': props->type = PRINTF_TYPE_POINTER; break;
+    case 'h': props->length = AV_CLAMP(props->length - 1, PRINTF_WIDTH_8, PRINTF_WIDTH_64); return false;
+    case 'l': props->length = AV_CLAMP(props->length + 1, PRINTF_WIDTH_8, PRINTF_WIDTH_64); return false;
     default:
         return false;
     }
@@ -103,6 +94,9 @@ static bool32 processValue(const AvStream stream, struct PrintfValueProps* props
 
 static uint32 numberOfCharacters(uint64 number, uint8 base) {
     // Calculate the number of characters using the logarithm formula
+    if(number == 0){
+        return 1;
+    }
     uint32 numDigits = (uint32)(log(number) / log(base)) + 1;
 
     return numDigits;
@@ -150,25 +144,25 @@ static void printfUint(AvStream stream, uint32 width, uint64 value, uint8 base, 
     }
 }
 
-static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, va_list* args, uint64* value, bool32* valueSign) {
+static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, struct PrintfArg arg, uint64* value, bool32* valueSign) {
 
     uint64 halfway = 0;
     switch (width) {
     case PRINTF_WIDTH_8:
-        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
+        (*value) = isSigned ? (uint64)arg.value.i : arg.value.u;
         halfway = 0x80;
         break;
     case PRINTF_WIDTH_16:
-        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
+        (*value) = isSigned ? (uint64)arg.value.i : arg.value.u;
         halfway = 0x8000;
         break;
     case PRINTF_WIDTH_DEFAULT:
     case PRINTF_WIDTH_32:
-        (*value) = isSigned ? (uint64)va_arg(*args, int32) : (uint64)va_arg(*args, uint32);
+        (*value) = isSigned ? (uint64)arg.value.i : arg.value.u;
         halfway = 0x80000000;
         break;
     case PRINTF_WIDTH_64:
-        (*value) = isSigned ? (uint64)va_arg(*args, int64) : (uint64)va_arg(*args, uint64);
+        (*value) = isSigned ? (uint64)arg.value.i : arg.value.u;
         halfway = 0x8000000000000000;
         break;
     }
@@ -181,26 +175,26 @@ static void interpretIntValue(enum PrintfWidth width, bool32 isSigned, va_list* 
     }
 }
 
-static void printfValue(AvStream stream, struct PrintfValueProps props, va_list* args) {
+static void printfValue(AvStream stream, struct PrintfArg arg) {
     // for integers
-    if (props.type >= 0) {
+    if (arg.props.type >= 0) {
 
-        uint32 width = props.width;
+        uint32 width = arg.props.width;
         uint64 value = 0;
         uint64 base = 10;
         bool32 upperCase = false;
-        bool32 zeroPad = props.zeroPad;
+        bool32 zeroPad = arg.props.zeroPad;
         bool32 isSigned = false;
-        enum PrintfWidth length = props.length;
+        enum PrintfWidth length = arg.props.length;
 
-        switch (props.type) {
+        switch (arg.props.type) {
         case PRINTF_TYPE_INT:
             base = 10;
-            interpretIntValue(length, true, args, &value, &isSigned);
+            interpretIntValue(length, true, arg, &value, &isSigned);
             break;
         case PRINTF_TYPE_UINT:
             base = 10;
-            interpretIntValue(length, false, args, &value, nullptr);
+            interpretIntValue(length, false, arg, &value, nullptr);
             break;
         case PRINTF_TYPE_POINTER:
             width = 16;
@@ -209,11 +203,11 @@ static void printfValue(AvStream stream, struct PrintfValueProps props, va_list*
             upperCase = true;
         case PRINTF_TYPE_HEX_LOWERCASE:
             base = 16;
-            interpretIntValue(length, false, args, &value, nullptr);
+            interpretIntValue(length, false, arg, &value, nullptr);
             break;
         case PRINTF_TYPE_BIN:
             base = 2;
-            interpretIntValue(length, false, args, &value, nullptr);
+            interpretIntValue(length, false, arg, &value, nullptr);
             break;
         default:
             avAssert(false, "invalid enum");
@@ -225,25 +219,25 @@ static void printfValue(AvStream stream, struct PrintfValueProps props, va_list*
     }
 
     //for other
-    if (props.type == PRINTF_TYPE_CHAR) {
-        pad(stream, AV_MAX((int64)props.width - (int64)1, 0));
-        char c = va_arg(*args, int);
+    if (arg.props.type == PRINTF_TYPE_CHAR) {
+        pad(stream, AV_MAX((int64)arg.props.width - (int64)1, 0));
+        char c = arg.value.c;
         avStreamPutC(c, stream);
         return;
     }
 
-    if (props.type == PRINTF_TYPE_CSTR) {
-        const char* str = va_arg(*args, const char*);
+    if (arg.props.type == PRINTF_TYPE_CSTR) {
+        const char* str = arg.value.cstr;
         uint64 len = strlen(str);
-        pad(stream, AV_MAX((int64)props.width - (int64)len, 0));
+        pad(stream, AV_MAX((int64)arg.props.width - (int64)len, 0));
         for (uint64 i = 0; i < len; i++) {
             avStreamPutC(str[i], stream);
         }
         return;
     }
-    if (props.type == PRINTF_TYPE_STRING) {
-        AvString str = va_arg(*args, AvString);
-        pad(stream, AV_MAX((int64)props.width - (int64)str.len, 0));
+    if (arg.props.type == PRINTF_TYPE_STRING) {
+        AvString str = arg.value.str;
+        pad(stream, AV_MAX((int64)arg.props.width - (int64)str.len, 0));
         for (uint64 i = 0; i < str.len; i++) {
             avStreamPutC(str.chrs[i], stream);
         }
@@ -270,7 +264,66 @@ void avStringPrintTo(const AvStream stream, AvString format, va_list args) {
             break;
         case PRINTF_STATE_VALUE:
             if (processValue(stream, &props, c)) {
-                printfValue(stream, props, &args);
+                struct PrintfArg arg = {0};
+                arg.props = props;
+                
+                switch(arg.props.type){
+                    case PRINTF_TYPE_HEX_LOWERCASE:
+                    case PRINTF_TYPE_HEX_UPPERCASE:
+                    case PRINTF_TYPE_BIN:
+                    case PRINTF_TYPE_UINT:
+                        switch(arg.props.length){
+                            case PRINTF_WIDTH_8:
+                                arg.value.u = (uint64)va_arg(args, uint32);
+                                break;
+                            case PRINTF_WIDTH_16:
+                                arg.value.u = (uint64)va_arg(args, uint32);
+                                break;
+                            case PRINTF_WIDTH_DEFAULT:
+                            case PRINTF_WIDTH_32:
+                                arg.value.u = (uint64)va_arg(args, uint32);
+                                break;
+                            case PRINTF_WIDTH_64:
+                                arg.value.u = va_arg(args, uint64);
+                                break;
+                        }
+                        break;
+                    case PRINTF_TYPE_INT:
+                        switch(arg.props.length){
+                            case PRINTF_WIDTH_8:
+                                arg.value.i = (int64)va_arg(args, int32);
+                                break;
+                            case PRINTF_WIDTH_16:
+                                arg.value.i = (int64)va_arg(args, int32);
+                                break;
+                            case PRINTF_WIDTH_DEFAULT:
+                            case PRINTF_WIDTH_32:
+                                arg.value.i = (int64)va_arg(args, int32);
+                                break;
+                            case PRINTF_WIDTH_64:
+                                arg.value.i = va_arg(args, int64);
+                                break;
+                        }
+                        break;
+                    case PRINTF_TYPE_CSTR:
+                        arg.value.cstr = va_arg(args, const char*);
+                        break;
+                    case PRINTF_TYPE_CHAR:
+                        arg.value.c = (char)va_arg(args, int);
+                        break;
+                    case PRINTF_TYPE_POINTER:
+                        arg.value.ptr = va_arg(args, void*);
+                        break;
+                    case PRINTF_TYPE_STRING:
+                        {
+                            AvString tmp = va_arg(args, AvString);
+                            avMemcpy(&arg.value.str, &tmp, sizeof(AvString));
+                        }
+                        break;
+                        
+                }
+
+                printfValue(stream, arg);
                 state = PRINTF_STATE_NORMAL;
             }
             break;

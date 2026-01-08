@@ -128,7 +128,7 @@ bool32 avPathGetFile(AvPathRef path) {
     if (path->type != AV_PATH_TYPE_FILE) {
         return false;
     }
-    avFileHandleCreate(path->path, &path->file);
+    path->file = avFileHandleCreate(path->path);
     return true;
 }
 

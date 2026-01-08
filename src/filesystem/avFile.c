@@ -80,14 +80,17 @@ void avFileBuildPathARR(const char* fileName, AvStringRef filePath, uint32 direc
 
 }
 
-void avFileHandleCreate(AvString filePath, AvFile* file) {
+AvFile avFileHandleCreate(AvString filePath) {
 
-	(*file) = avCallocate(1, sizeof(AvFile_T), "allocating file handle");
-	(*file)->status = AV_FILE_STATUS_CLOSED;
-	(*file)->stats = avCallocate(1, sizeof(struct stat), "allocating file stat");
+	AvFile file = NULL;
+
+	file = avCallocate(1, sizeof(AvFile_T), "allocating file handle");
+	avMemset(file, 0, sizeof(AvFile_T));
+	file->status = AV_FILE_STATUS_CLOSED;
+	file->stats = avCallocate(1, sizeof(struct stat), "allocating file stat");
 	AvString filePathStr = filePath;
 
-	AvFileNameProperties* nameProperties = &(*file)->nameProperties;
+	AvFileNameProperties* nameProperties = &file->nameProperties;
 	avStringMemoryAllocate(filePathStr.len, &nameProperties->fileStr);
 	avStringMemoryStore(filePathStr, 0, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
 	avStringFromMemory(&nameProperties->fileFullPath, 0, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
@@ -110,10 +113,12 @@ void avFileHandleCreate(AvString filePath, AvFile* file) {
 		avStringFromMemory(&nameProperties->fileExtension, filePathLen + fileExtOffset, AV_STRING_FULL_LENGTH, &nameProperties->fileStr);
 	}
 	avStringFromMemory(&nameProperties->fileNameWithoutExtension, filePathLen, fileExtOffset, &nameProperties->fileStr);
+
+	return file;
 }
 
 AvFileNameProperties* avFileHandleGetFileNameProperties(AvFile file) {
-	return &file->nameProperties;
+	return &(file->nameProperties);
 }
 
 #define statProp(prop) (offsetof(struct stat, prop))

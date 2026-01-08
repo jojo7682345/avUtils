@@ -198,6 +198,7 @@ void testDynamicArray() {
 	}
 
 	avDynamicArrayDestroy(arr);
+	avFree(buffer);
 }
 
 
@@ -219,6 +220,7 @@ void testString() {
 	avStringReplace(&replacedString, str, AV_CSTR("_"), AV_CSTR(" insert "));
 	avStringFree(&str);
 	avStringPrint(str);
+	avStringFree(&replacedString);
 
 
 
@@ -239,7 +241,8 @@ void testString() {
 	avArrayFree(&strings);
 
 	avStringPrintf(AV_CSTR("%hu %08hi %x %p\n%c %5S %09s\n"), 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234"), "1234");
-	printf("%hu %08hi %x %p\n%c %5S %9s\n", 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234").chrs, "1234");
+	printf("%hu %08hi %x %p\n%c %5s %9s\n", 0xffaa, 0xffab, 0xffac, &strings, 'c', AV_CSTR("1234").chrs, "1234");
+	fflush(stdout);
 
 	avStringDebugContextEnd;
 }
@@ -270,7 +273,7 @@ void testPath(const char* location) {
 
 void testFile() {
 
-	avStringDebugContextStart;
+	//avStringDebugContextStart;
 
 	AvString filePath = AV_EMPTY;
 #ifdef _WIN32
@@ -279,10 +282,14 @@ void testFile() {
 	avFileBuildPathVAR("README.md", &filePath, AV_ROOT_DIR, "home", "dms", "Programming", "Projects", "avUtils");
 #endif
 
-	AvFile file;
-	avFileHandleCreate(filePath, &file);
+	AvFile file = avFileHandleCreate(filePath);
 
 	AvFileNameProperties* nameProperties = avFileHandleGetFileNameProperties(file);
+	printf("fileFullPath: %.*s\n", (int)nameProperties->fileFullPath.len, nameProperties->fileFullPath.chrs);
+	printf("fileName: %.*s\n", (int)nameProperties->fileName.len, nameProperties->fileName.chrs);
+	printf("fileExtension: %.*s\n", (int)nameProperties->fileExtension.len, nameProperties->fileExtension.chrs);
+
+
 	avStringPrintln(nameProperties->fileFullPath);
 	avStringPrintln(nameProperties->fileName);
 	avStringPrintln(nameProperties->filePath);
@@ -315,17 +322,18 @@ void testFile() {
 
 	printf(buffer);
 
+	avFree(buffer);
+
 	avFileClose(file);
 
 	avFileHandleDestroy(file);
 	avStringFree(&filePath);
 
-	avStringDebugContextEnd;
+	//avStringDebugContextEnd;
 }
 
 void testProcess() {
-	AvFile testFile = AV_EMPTY;
-	avFileHandleCreate(AV_CSTR("./output.txt"), &testFile);
+	AvFile testFile = avFileHandleCreate(AV_CSTR("./output.txt"));
 	avFileOpen(testFile, AV_FILE_OPEN_WRITE_DEFAULT);
 	AvFileDescriptor out = avFileGetDescriptor(testFile);
 	AvProcessStartInfo info = AV_EMPTY;
@@ -351,6 +359,7 @@ void testProcess() {
 	avFileHandleDestroy(testFile);
 
 	avProcessStartInfoDestroy(&info);
+	avProcessDiscard(process);
 }
 
 void testPipe() {
@@ -401,11 +410,11 @@ int main() {
 	testQueue();
 	testThread();
 	testMutex();
-	testFile();
 	testPipe();
 	testPath("/");
 	testString();
 	testProcess();
+	testFile();
 	testEnvironment();
 	testBuild();
 	printf("test completed\n");
