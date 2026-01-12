@@ -4,7 +4,6 @@
 C_SYMBOLS_START
 
 #include "avString.h"
-#include "filesystem/avDirectory.h"
 
 bool32 avChangeDirectory(AvString path);
 bool32 avGetEnvironmentVariable(AvString variable, AvStringRef value);

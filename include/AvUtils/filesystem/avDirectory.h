@@ -5,47 +5,46 @@ C_SYMBOLS_START
 
 #include "../avTypes.h"
 #include "../avString.h"
+#include "../memory/avAllocator.h"
 #include "avFile.h"
 
-typedef enum AvPathType {
-	AV_PATH_TYPE_UNKNOWN,
-	AV_PATH_TYPE_FILE,
-	AV_PATH_TYPE_DIRECTORY,
-} AvPathType;
+typedef enum AvPathNodeType {
+	AV_PATH_NODE_TYPE_NONE = 0,
+	AV_PATH_NODE_TYPE_FILE,
+	AV_PATH_NODE_TYPE_DIRECTORY,
+} AvPathNodeType;
 
-// typedef enum AvPathProperties {
-// 	AV_PATH_PROPERTY_NORMAL			= 0,
-// 	AV_PATH_PROPERTY_DIR 			= 1 << 0,
-// 	AV_PATH_PROPERTY_SYMLINK 		= 1 << 1,
-// 	AV_PATH_PROPERTY_HIDDEN			= 1 << 2,
-// 	AV_PATH_PROPERTY_READONLY		= 1 << 3,
-// } AvPathProperties;
-// typedef uint32 AvPathPropertiesFlags;
-
-typedef struct AvDirectory {
-	bool32 explored;
-	uint32 contentCount;
-	struct AvPath* content;
-} AvDirectory;
+typedef struct AvPathNode {
+	AvPathNodeType type;
+	AvString name;
+	AvString fullName;
+}AvPathNode;
 
 typedef struct AvPath {
-	AvPathType type;
-	//AvPathPropertiesFlags properties;
-	struct AvPath* parent;
 	AvString path;
-	union {
-		AvFile file;
-		AvDirectory directory;
-	};
+	struct AvPath* root;
+	AvAllocator allocator;
+	uint32 contentCount;
+	AvPathNode* content;
 } AvPath;
-typedef AvPath* AvPathRef; 
+typedef struct AvPath* AvPathRef;
 
-bool32 avPathOpen(AvString str, AvPathRef path);
+bool32 avDirectoryExists(AvString location);
+uint32 avMakeDirectory(AvString location);
+uint32 avMakeDirectoryRecursive(AvString location);
 
-bool32 avPathGetFile(AvPathRef path);
-bool32 avPathGetDirectoryContents(AvPathRef path);
+bool32 avGetCurrentDir(uint64 bufferSize, char* buffer);
+int32 avChangeCurrentDir(AvString path);
 
-void avPathClose(AvPathRef path);
+bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef path);
+void avDirectoryClose(AvPathRef path);
+
+typedef enum AvDirectoryDeleteOptions {
+	AV_DIRECTORY_DELETE_ONLY_IF_EMPTY = 0 << 0,
+	AV_DIRECTORY_DELETE_RECURSIVE = 1 << 0,
+} AvDirectoryDeleteOptions;
+
+bool32 avDirectoryDelete(AvString location, AvDirectoryDeleteOptions options);
 
 C_SYMBOLS_END
 #endif//__AV_DIRECTORY__

@@ -74,7 +74,6 @@ int main(int argC, const char* argV[]) {
         SOURCE_FILE("src/string",           "avChar"),
         SOURCE_FILE("src/string",           "avString"),
         SOURCE_FILE("src/filesystem",       "avFile"),
-        SOURCE_FILE("src/building",         "avBuilder"),
     };
     const uint bootstrapFilesCount = sizeof(bootstrapFiles)/sizeof(File);
     for(uint i = 0; i < bootstrapFilesCount; i++){
