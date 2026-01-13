@@ -13,8 +13,10 @@ static uint32 osReserveSize();
 
 static uint32 pageSize;
 static uint32 reserveSize;
+static uint32 handlePagesPerOsPage;
 
-#ifdef __WIN32
+
+#ifdef _WIN32
 
 #include <windows.h>
 
@@ -130,8 +132,8 @@ struct AvOrphanHandleData_t{ // fits in 32 bytes (28)
 static void* handleBase;
 static void* dataBase;
 
-static inline uint64 align_up(uint64 x, uint64 align) {
-    return (x + align - 1) & ~(align - 1);
+static inline void* align_up(void* x, uint64 align) {
+    return (void*)(((uint64)x + align - 1) & ~(align - 1));
 }
 
 enum AvHandlePageType{
@@ -158,6 +160,8 @@ static void avUtilsInit(void){
     pageSize = osPageSize();
     reserveSize = osReserveSize();
 
+    handlePagesPerOsPage = sizeof(AvHandlePage)/pageSize;
+
     handleBase = align_up(osReserve(HANDLE_BASE_SIZE), pageSize);
     dataBase = align_up(osReserve(DATA_BASE_SIZE), pageSize);
 }
@@ -171,8 +175,18 @@ static void avUtilsDeinit(void){
 
 AvHandlePage* pageThatHasAnyFree = NULL;
 
-avHandle avAllocate_(uint32 size, AV_DEBUG_LOCATION_PARAMS, avHandle parent){
 
+static AvHandlePage* allocateNewHandlePage(){
+    const uint32 numPages = handlePagesPerOsPage;
+    AvHandlePage newPages[numPages];
+    return newPages;
+
+}
+
+avHandle avAllocate_(uint32 size, AV_DEBUG_LOCATION_PARAMS, avHandle parent){
+    if(!pageThatHasAnyFree){
+        pageThatHasAnyFree = allocateNewHandlePage();        
+    }
 
 
 }

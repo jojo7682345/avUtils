@@ -1,7 +1,7 @@
 #ifndef __HANDLE__
 #define __HANDLE__
 
-#include <avTypes.h>
+#include <AvUtils/avTypes.h>
 
 typedef uint32 avHandle;
 
