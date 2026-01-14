@@ -420,7 +420,7 @@ bool32 avDirectoryDelete(AvString location, AvDirectoryDeleteOptions options) {
 
     AvString tmp = {0};
     avStringClone(&tmp, location);
-    bool32 ret = FALSE;
+    bool32 ret = 0;
 #ifdef _WIN32
 
     if (options & AV_DIRECTORY_DELETE_RECURSIVE) {
@@ -434,12 +434,12 @@ bool32 avDirectoryDelete(AvString location, AvDirectoryDeleteOptions options) {
 
 #else
     if (options & AV_DIRECTORY_DELETE_RECURSIVE) {
-        ret = avDirectoryDeleteRecursivePosix(location);
+        ret = avDirectoryDeleteRecursivePosix(location.chrs);
         avStringFree(&tmp);
         return ret;
     }
 
-    ret = rmdir(location) == 0;
+    ret = rmdir(location.chrs) == 0;
     avStringFree(&tmp);
     return ret;
 #endif
