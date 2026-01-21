@@ -28,7 +28,7 @@ void avStreamDiscard(AvStream stream) {
 
 void avStreamPutC(char chr, AvStream stream) {
     if (stream->pos >= stream->size) {
-        if (stream->discard == 0) {
+        if (stream->discard == AV_FILE_DESCRIPTOR_NULL) {
             return;
         }
         avStreamDiscard(stream);
