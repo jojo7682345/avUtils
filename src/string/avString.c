@@ -983,6 +983,18 @@ void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocat
 	memcpy(dst, &str, sizeof(AvString));
 }
 
+void avStringMoveToAllocator(AvStringRef str, AvAllocator* allocator){
+	avAssert(str!=nullptr, "string must be a valid reference");
+	avAssert(str->len != 0, "string length cannot be 0");
+	avAssert(str->chrs != nullptr, "string must have data");
+
+	AvString tmp = AV_EMPTY;
+	avStringCopyToAllocator(*str, &tmp, allocator);
+
+	avStringFree(str);
+	avStringUnsafeCopy(str, tmp);
+}
+
 bool32 avStringIsEmpty(AvString str){
 	return str.chrs==nullptr || str.len == 0;
 }

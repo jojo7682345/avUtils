@@ -179,6 +179,7 @@ uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvS
 void avStringFlip(AvStringRef str);
 
 void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocator);
+void avStringMoveToAllocator(AvStringRef str, AvAllocator* allocator);
 
 C_SYMBOLS_END
 #endif//__AV_STRING__
