@@ -153,6 +153,7 @@ void avStringJoin_(AvStringRef dst, ...);
 #define avStringJoin(dst, ...) avStringJoin_(dst,__VA_ARGS__, AV_STR((char*)AV_STRING_NULL, AV_STRING_NULL))
 
 void avStringAppend(AvStringRef dst, AvString src);
+void avStringAppendChar(AvStringRef str, char c);
 
 bool32 avStringIsEmpty(AvString str);
 
@@ -180,6 +181,10 @@ void avStringFlip(AvStringRef str);
 
 void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocator);
 void avStringMoveToAllocator(AvStringRef str, AvAllocator* allocator);
+
+
+void avStringPathNormalize(AvStringRef path);
+void avStringPathResolveRelative(AvStringRef dst, AvString baseFile, AvString relativePath);
 
 C_SYMBOLS_END
 #endif//__AV_STRING__

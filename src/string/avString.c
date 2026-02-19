@@ -76,7 +76,8 @@ void avStringMove(AvStringRef dst, AvStringRef src) {
 	if (dst->memory == nullptr) {
 		avStringClone(dst, *src);
 	} else {
-		avStringMemoryStore(*src, dst->chrs - dst->memory->data, dst->len, dst->memory);
+		avStringFree(dst);
+		avStringClone(dst, *src);
 	}
 	avStringFree(src);
 }
@@ -739,33 +740,31 @@ void avStringJoin_(AvStringRef dst, ...) {
 	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
 }
 
-// void avStringAppend(AvStringRef dst, AvString src) {
-// 	avAssert(dst != nullptr, "destination must be a valid reference");
-// 	if (dst->memory == nullptr) {
-// 		avStringMemoryAllocStore(src, dst->memory);
-// 		avStringFromMemory(dst, 0, AV_STRING_FULL_LENGTH, dst->memory);
-// 		return;
-// 	}
-// 	AvStringMemoryRef memory = dst->memory;
-// 	if ((dst->chrs - dst->memory->data) + dst->len < dst->memory->capacity) {
-// 		avStringMemoryHeapAllocate(dst->len + src.len, &memory);
-// 		avStringMemoryStore(*dst, 0, dst->len, memory);
-// 		avStringMemoryStore(src, dst->len, src.len, memory);
-// 		avFree(dst);
-// 		avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
-// 	} else {
-// 		avStringMemoryResizeSection(dst->len, src.len, memory);
-// 		avStringMemoryStore(src, dst->len, src.len, memory);
-// 		avStringResize(dst, dst->len + src.len);
-// 	}
-// }
+void avStringAppendChar(AvStringRef str, char c){
+	avAssert(str != nullptr, "destination must be a valid reference");
+	AvStringHeapMemory memory = {0};
+	avStringMemoryHeapAllocate(str->len + 1, &memory);
+	avStringMemoryStore(*str, 0, str->len, memory);
+	memory->data[str->len] = c;
+	avStringFree(str);
+	avStringFromMemory(str, AV_STRING_WHOLE_MEMORY, memory);
+}
+
+void avStringAppend(AvStringRef dst, AvString src) {
+	avAssert(dst != nullptr, "destination must be a valid reference");
+	avAssert(src.len + dst->len > 0, "strings must not be empty");
+	AvStringHeapMemory memory = {0};
+	avStringMemoryHeapAllocate(dst->len + src.len, &memory);
+	avStringMemoryStore(*dst, 0, dst->len, memory);
+	avStringMemoryStore(src, dst->len, src.len, memory);
+	avStringFree(dst);
+	avStringFromMemory(dst, AV_STRING_WHOLE_MEMORY, memory);
+}
 
 void avStringMemoryStoreCharArraysVA_(AvStringMemoryRef memory, ...) {
 
 	AvDynamicArray arr;
 	avDynamicArrayCreate(0, sizeof(const char*), &arr);
-
-
 
 	va_list list;
 	va_start(list, memory);
@@ -1017,4 +1016,140 @@ void avStringTrim(AvStringRef str){
 		}
 	}
 	avStringUnsafeCopy(str, (AvString){.chrs = str->memory->data, .len=lastNonWhitespace, .memory = str->memory});
+}
+
+static bool32 avPathIsAbsolute(AvString path){
+    if(path.len == 0) return false;
+
+#ifdef _WIN32
+    // "C:\..." or "C:/..."
+    if(path.len > 1 && path.chrs[1] == ':') return true;
+    // "\something"
+    if(path.chrs[0] == '\\' || path.chrs[0] == '/') return true;
+#else
+    if(path.data[0] == '/') return true;
+#endif
+
+    return false;
+}
+
+void avStringPathNormalize(AvStringRef path){
+    if(avStringIsEmpty(*path)) return;
+
+    AvDynamicArray stack;
+    avDynamicArrayCreate(0, sizeof(AvString), &stack);
+    avDynamicArraySetAllowRelocation(true, stack);
+    bool32 isAbsolute = avPathIsAbsolute(*path);
+
+    uint32 i = 0;
+    while(i < path->len){
+        // Skip separators
+        while(i < path->len &&
+              (path->chrs[i] == '/' || path->chrs[i] == '\\')){
+            i++;
+        }
+
+        uint32 start = i;
+
+        // Read segment
+        while(i < path->len &&
+              path->chrs[i] != '/' &&
+              path->chrs[i] != '\\'){
+            i++;
+        }
+
+        uint32 len = i - start;
+        if(len == 0) continue;
+
+        AvString segment = AV_EMPTY;
+        avStringCopySection(&segment, start, len, *path);
+
+        if(avStringEquals(segment, AV_CSTRA("."))){
+            avStringFree(&segment);
+            continue;
+        }
+
+        if(avStringEquals(segment, AV_CSTRA(".."))){
+            if(avDynamicArrayGetSize(stack) > 0){
+                AvString* last = avDynamicArrayGetPtr(avDynamicArrayGetSize(stack)-1, stack);
+                avStringFree(last);
+                avDynamicArrayRemove(avDynamicArrayGetSize(stack)-1, stack);
+            }else if(!isAbsolute){
+                // Preserve leading ".." for relative paths
+                avDynamicArrayAdd(&segment, stack);
+                continue;
+            }
+            avStringFree(&segment);
+            continue;
+        }
+
+        avDynamicArrayAdd(&segment, stack);
+    }
+
+    // Rebuild path
+    AvString normalized = AV_EMPTY;
+
+#ifdef _WIN32
+    char separator = '\\';
+#else
+    char separator = '/';
+#endif
+
+    if(isAbsolute){
+#ifdef _WIN32
+        // Preserve drive letter if present
+        if(path->len > 1 && path->chrs[1] == ':'){
+            avStringAppendChar(&normalized, path->chrs[0]);
+            avStringAppendChar(&normalized, ':');
+            avStringAppendChar(&normalized, separator);
+        }else{
+            avStringAppendChar(&normalized, separator);
+        }
+#else
+        avStringAppendChar(&normalized, separator);
+#endif
+    }
+
+    for(uint32 j = 0; j < avDynamicArrayGetSize(stack); j++){
+        AvString* seg = avDynamicArrayGetPtr(j, stack);
+
+        if(j > 0 || isAbsolute){
+            if(normalized.len > 0 &&
+                normalized.chrs[normalized.len - 1] != separator){
+                avStringAppendChar(&normalized, separator);
+            }
+        }
+
+        avStringAppend(&normalized, *seg);
+        avStringFree(seg);
+    }
+
+    avDynamicArrayDestroy(stack);
+
+    avStringFree(path);
+    avStringMove(path, &normalized);
+}
+
+
+void avStringPathResolveRelative(AvStringRef dst, AvString baseFile, AvString relativePath){
+    AvString currentDir = AV_EMPTY;
+    avStringClone(&currentDir, baseFile);
+
+    strOffset lastSlash = avStringFindLastOccuranceOfChar(currentDir, '/');
+#ifdef _WIN32
+    strOffset lastBackslash = avStringFindLastOccuranceOfChar(currentDir, '\\');
+    if(lastBackslash > lastSlash) lastSlash = lastBackslash;
+#endif
+    if(lastSlash >= 0){
+        AvString tmp = {0};
+        avStringCopySection(&tmp, 0, lastSlash + 1, currentDir);
+        avStringFree(&currentDir);
+        avStringJoin(&relativePath, tmp, relativePath);
+    }else{
+        avStringFree(&currentDir);
+        avStringClone(&relativePath, relativePath);
+    }
+    avStringClone(dst, relativePath);
+    avStringPathNormalize(dst);
+    avStringFree(&relativePath);
 }

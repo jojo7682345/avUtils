@@ -106,6 +106,6 @@ typedef uint8* AvAddress;
 
 typedef void (*AvDeallocateElementCallback)(void*, uint64);
 typedef void (*AvDestroyElementCallback)(void*);
-typedef uint64 strOffset;
+typedef int64 strOffset;
 
 #endif//__AV_TYPES__
