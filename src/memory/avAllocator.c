@@ -62,9 +62,15 @@ bool32 avAllocatorTransform(AvAllocatorType srcType, AvAllocatorType dstType, Av
 }
 
 void avAllocatorReset(AvAllocator* allocator) {
+    // make local copy of allocator first as the allocator may be located within its own memory
+    AvAllocator tmp = *allocator;
+    allocator = &tmp;
     ALLOC_FUNCS(Reset, ;, );
 }
 void avAllocatorDestroy(AvAllocator* allocator) {
-    ALLOC_FUNCS(Destroy, ;, );
+    // make local copy of allocator first as the allocator may be located within its own memory
+    AvAllocator tmp = *allocator;
     allocator->type = AV_ALLOCATOR_TYPE_NONE;
+    allocator = &tmp;
+    ALLOC_FUNCS(Destroy, ;, );
 }
