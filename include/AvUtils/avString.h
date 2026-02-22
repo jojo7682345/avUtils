@@ -109,8 +109,8 @@ void avStringMemoryAllocStore(AvString str, AvStringMemoryRef memory);
 #define avStringDebugContextStart avStringDebugContextStart_();
 #define avStringDebugContextEnd avStringDebugContextEnd_()
 #else
-#define avStringDebugContextStart() (void)
-#define avStringDebugContextEnd() (void)
+#define avStringDebugContextStart 
+#define avStringDebugContextEnd 
 #endif
 
 void avStringDebugContextStart_();
