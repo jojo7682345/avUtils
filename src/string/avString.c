@@ -940,14 +940,14 @@ uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvS
 
 	uint32 count = 0;
 	while (count != splitCount) {
-		strOffset sectionLength = avStringFindFirstOccuranceOf(AV_STR(str.chrs + offset, str.len - offset), split) - 1;
+		strOffset sectionLength = avStringFindFirstOccuranceOf(AV_STR(str.chrs + offset, str.len - offset), split);
 		avStringCopySection(avArrayGetPtr(index++, substrings), offset, sectionLength, str);
 		offset += sectionLength + split.len;
 		count++;
 	}
 	avStringCopySection(avArrayGetPtr(index++, substrings), offset, str.len - offset, str);
 
-	return splitCount;
+	return splitCount+1;
 }
 
 void avStringFlip(AvStringRef str) {
