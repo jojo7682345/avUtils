@@ -1027,7 +1027,7 @@ static bool32 avPathIsAbsolute(AvString path){
     // "\something"
     if(path.chrs[0] == '\\' || path.chrs[0] == '/') return true;
 #else
-    if(path.data[0] == '/') return true;
+    if(path.chrs[0] == '/') return true;
 #endif
 
     return false;

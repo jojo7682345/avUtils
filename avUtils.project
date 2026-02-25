@@ -5,23 +5,20 @@ import global "std/c/stdc.project" {
     getSourceFiles as getSource;
 }
 
-compiler = "gcc";
-linker = "ar";
+var compiler = "gcc";
+var linker = "ar";
 
-flags = "-std=c11 -Wall -ggdb -fPIC";
-archiverflags = "rcs";
+var flags = "-std=c11 -Wall -ggdb -fPIC";
+var archiverflags = "rcs";
 
-includes="include";
+var includes="include";
 
-sourceDir = "src";
-buildDir = "build";
-outDir = "lib";
+var sourceDir = "src";
+var buildDir = "build";
+var outDir = "lib";
 
-avUtils(){
-    var ret;
-    perform {
-        ret = buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
-    }
+func avUtils(){
+    var ret = buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
     if(arraySize(ret)){
         return 0;
     }else{
