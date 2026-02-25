@@ -20,8 +20,10 @@ var outDir = "lib";
 func avUtils(){
     var ret = buildStaticLibrary(getSource(sourceDir), buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
     if(arraySize(ret)){
+        println(ret);
         return 0;
     }else{
+        println("failure");
         return -1;
     }
 }

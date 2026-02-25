@@ -1036,120 +1036,136 @@ static bool32 avPathIsAbsolute(AvString path){
 void avStringPathNormalize(AvStringRef path){
     if(avStringIsEmpty(*path)) return;
 
-    AvDynamicArray stack;
-    avDynamicArrayCreate(0, sizeof(AvString), &stack);
-    avDynamicArraySetAllowRelocation(true, stack);
     bool32 isAbsolute = avPathIsAbsolute(*path);
 
-    uint32 i = 0;
-    while(i < path->len){
-        // Skip separators
-        while(i < path->len &&
-              (path->chrs[i] == '/' || path->chrs[i] == '\\')){
-            i++;
-        }
-
-        uint32 start = i;
-
-        // Read segment
-        while(i < path->len &&
-              path->chrs[i] != '/' &&
-              path->chrs[i] != '\\'){
-            i++;
-        }
-
-        uint32 len = i - start;
-        if(len == 0) continue;
-
-        AvString segment = AV_EMPTY;
-        avStringCopySection(&segment, start, len, *path);
-
-        if(avStringEquals(segment, AV_CSTRA("."))){
-            avStringFree(&segment);
-            continue;
-        }
-
-        if(avStringEquals(segment, AV_CSTRA(".."))){
-            if(avDynamicArrayGetSize(stack) > 0){
-                AvString* last = avDynamicArrayGetPtr(avDynamicArrayGetSize(stack)-1, stack);
-                avStringFree(last);
-                avDynamicArrayRemove(avDynamicArrayGetSize(stack)-1, stack);
-            }else if(!isAbsolute){
-                // Preserve leading ".." for relative paths
-                avDynamicArrayAdd(&segment, stack);
-                continue;
-            }
-            avStringFree(&segment);
-            continue;
-        }
-
-        avDynamicArrayAdd(&segment, stack);
-    }
-
-    // Rebuild path
-    AvString normalized = AV_EMPTY;
+	AvDynamicArray stack;
+    avDynamicArrayCreate(0, sizeof(AvString), &stack);
+    avDynamicArraySetAllowRelocation(true, stack);
 
 #ifdef _WIN32
-    char separator = '\\';
+    const char separator = '\\';
 #else
-    char separator = '/';
+    const char separator = '/';
 #endif
 
-    if(isAbsolute){
+	uint32 i = 0;
+
+	while(i < path->len){
+		// skip separators
+		while(i < path->len && (path->chrs[i]=='/' || path->chrs[i] == '\\')){
+			i++;
+		}
+
+		uint32 start = i;
+		while(i < path->len && path->chrs[i] != '/' && path->chrs[i] != '\\'){
+			i++;
+		}
+
+		uint32 len = i - start;
+		if(len==0) continue;
+
+		AvString segment = AV_EMPTY;
+		avStringCopySection(&segment, start, len, *path);
+
+// Handle Windows drive letter (e.g., "C:")
 #ifdef _WIN32
-        // Preserve drive letter if present
-        if(path->len > 1 && path->chrs[1] == ':'){
-            avStringAppendChar(&normalized, path->chrs[0]);
-            avStringAppendChar(&normalized, ':');
-            avStringAppendChar(&normalized, separator);
-        }else{
-            avStringAppendChar(&normalized, separator);
-        }
-#else
+		if (len == 2 &&
+			((segment.chrs[0] >= 'A' && segment.chrs[0] <= 'Z') ||
+			(segment.chrs[0] >= 'a' && segment.chrs[0] <= 'z')) &&
+			segment.chrs[1] == ':'){
+			// Do not push drive into stack
+			avStringFree(&segment);
+			continue;
+		}
+#endif
+
+		if(avStringEquals(segment, AV_CSTRA("."))){
+			avStringFree(&segment);
+			continue;
+		}
+
+		if(avStringEquals(segment, AV_CSTRA(".."))){
+			uint32 stackSize = avDynamicArrayGetSize(stack);
+			if(stackSize > 0){
+				AvString* last = avDynamicArrayGetPtr(stackSize - 1, stack);
+				avStringFree(last);
+				avDynamicArrayRemove(stackSize-1, stack);
+			}else if(!isAbsolute){
+				avDynamicArrayAdd(&segment, stack);
+				continue;
+			}
+			avStringFree(&segment);
+			continue;
+		}
+
+		avDynamicArrayAdd(&segment, stack);
+	}
+
+	AvString normalized = AV_EMPTY;
+
+#ifdef _WIN32
+    // Preserve drive letter
+    if (isAbsolute && path->len > 1 && path->chrs[1] == ':') {
+        avStringAppendChar(&normalized, path->chrs[0]);
+        avStringAppendChar(&normalized, ':');
         avStringAppendChar(&normalized, separator);
+    } else if (isAbsolute) {
+        avStringAppendChar(&normalized, separator);
+    }
+#else
+    if (isAbsolute) avStringAppendChar(&normalized, separator);
 #endif
-    }
 
-    for(uint32 j = 0; j < avDynamicArrayGetSize(stack); j++){
-        AvString* seg = avDynamicArrayGetPtr(j, stack);
+	uint32 stackSize = avDynamicArrayGetSize(stack);
 
-        if(j > 0 || isAbsolute){
-            if(normalized.len > 0 &&
-                normalized.chrs[normalized.len - 1] != separator){
-                avStringAppendChar(&normalized, separator);
-            }
-        }
+	for(uint32 i = 0; i < stackSize; i++){
+		AvString* seg = avDynamicArrayGetPtr(i, stack);
+		if(normalized.len > 0 && normalized.chrs[normalized.len-1]!=separator){
+			avStringAppendChar(&normalized, separator);
+		}
+		avStringAppend(&normalized, *seg);
+		avStringFree(seg);
+	}
 
-        avStringAppend(&normalized, *seg);
-        avStringFree(seg);
-    }
-
-    avDynamicArrayDestroy(stack);
-
-    avStringFree(path);
-    avStringMove(path, &normalized);
+	avDynamicArrayDestroy(stack);
+	avStringFree(path);
+	avStringMove(path, &normalized);
 }
 
 
 void avStringPathResolveRelative(AvStringRef dst, AvString baseFile, AvString relativePath){
-    AvString currentDir = AV_EMPTY;
-    avStringClone(&currentDir, baseFile);
+	if(avPathIsAbsolute(relativePath)){
+		avStringClone(dst, relativePath);
+		avStringPathNormalize(dst);
+		return;
+	}
 
-    strOffset lastSlash = avStringFindLastOccuranceOfChar(currentDir, '/');
+	AvString baseDir = AV_EMPTY;
+	avStringClone(&baseDir, baseFile);
+
+	strOffset lastSlash = avStringFindLastOccuranceOfChar(baseDir, '/');
+	
 #ifdef _WIN32
-    strOffset lastBackslash = avStringFindLastOccuranceOfChar(currentDir, '\\');
-    if(lastBackslash > lastSlash) lastSlash = lastBackslash;
+	strOffset lastBackslash = avStringFindLastOccuranceOfChar(baseDir, '\\');
+	if(lastBackslash > lastSlash) lastSlash = lastBackslash;
 #endif
-    if(lastSlash >= 0){
-        AvString tmp = {0};
-        avStringCopySection(&tmp, 0, lastSlash + 1, currentDir);
-        avStringFree(&currentDir);
-        avStringJoin(&relativePath, tmp, relativePath);
-    }else{
-        avStringFree(&currentDir);
-        avStringClone(&relativePath, relativePath);
-    }
-    avStringClone(dst, relativePath);
-    avStringPathNormalize(dst);
-    avStringFree(&relativePath);
+	AvString combined = AV_EMPTY;
+
+
+	if(lastSlash >= 0){
+		AvString dirOnly = AV_EMPTY;
+		avStringCopySection(&dirOnly, 0, lastSlash+1, baseDir);
+
+		avStringJoin(&combined, dirOnly, relativePath);
+		avStringFree(&dirOnly);
+	}else{
+		avStringClone(&combined, relativePath);
+	}
+
+	avStringFree(&baseDir);
+
+	avStringClone(dst, combined);
+	avStringFree(&combined);
+
+	avStringPathNormalize(dst);
 }
