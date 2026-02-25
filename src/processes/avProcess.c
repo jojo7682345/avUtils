@@ -5,6 +5,7 @@
 #include <AvUtils/dataStructures/avDynamicArray.h>
 #include <AvUtils/dataStructures/avArray.h>
 #include <AvUtils/avFileSystem.h>
+#include <AvUtils/avMath.h>
 
 #include <stdio.h>
 
@@ -69,6 +70,8 @@ void avProcessStartInfoCreate(AvProcessStartInfo* info, AvString bin, AvString c
     avStringClone(&info->executable, bin);
     if (cwd.len != 0) {
         avStringClone(&info->workingDirectory, cwd);
+    }else{
+        avMemset(&info->workingDirectory, 0, sizeof(AvString));
     }
     if(argCount){
         avArrayAllocate(argCount, sizeof(AvString), &info->args);
@@ -191,11 +194,13 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
     AvString cmd = AV_EMPTY;
     avStringFromMemory(&cmd, AV_STRING_WHOLE_MEMORY, &memory);
     
-
+    char commandLine[1024];
+    avMemcpy(commandLine, cmd.chrs, AV_MIN(1023, cmd.len));
+    commandLine[AV_MIN(1023,cmd.len)] = '\0';
 
     int32 bSuccess = CreateProcessA(
         NULL,
-        (char*)cmd.chrs,
+        commandLine,
         NULL,
         NULL, 
         TRUE,

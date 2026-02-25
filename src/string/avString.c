@@ -184,7 +184,7 @@ void avStringMemoryAllocate_(uint64 capacity, AvStringMemoryRef memory, const ch
 	avAssert(memory->data == nullptr, "string memory already allocated");
 	avAssert(memory->capacity == 0, "string memory already allocated");
 	avAssert(memory->referenceCount == 0, "string memory already allocated");
-	avAssert(capacity != 0, "capacity must be >1");
+	avAssert(capacity != 0, "capacity must be > 0");
 
 	memory->capacity = capacity;
 	memory->data = avCallocate(capacity + NULL_TERMINATOR_SIZE, 1, "allocating string data");
