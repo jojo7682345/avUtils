@@ -629,7 +629,7 @@ uint64 avStringReplaceAll(AvStringRef dst, AvString str, uint32 count, uint64 st
 			if(offset==AV_STRING_NULL){
 				continue;
 			}
-			if(offset < closestOffset){
+			if((uint64)offset < closestOffset){
 				closestSequence = i;
 				closestOffset = offset;
 			}
