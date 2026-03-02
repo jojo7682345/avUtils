@@ -1,5 +1,5 @@
 #ifndef __AV_THREADING__
-#define __AV_TRHEADING__
+#define __AV_THREADING__
 #include "avDefinitions.h"
 C_SYMBOLS_START
 
