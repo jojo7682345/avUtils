@@ -49,7 +49,8 @@ typedef AvString* AvStringRef;
 
 #define AV_CSTRA(str) AV_STR(str, sizeof(str)/sizeof(char)-1)
 
-void avStringClone(AvStringRef dst, AvString src);
+#define avStringClone(dstPtr, src) avStringClone_(dstPtr, src, __FILE__, __LINE__)
+void avStringClone_(AvStringRef dst, AvString src, const char* file, uint32 line);
 void avStringMove(AvStringRef dst, AvStringRef src);
 
 void avStringCopy(AvStringRef dst, AvString src);

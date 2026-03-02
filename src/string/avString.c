@@ -27,9 +27,9 @@ uint64 avCStringLength(const char* str) {
 	return length - 1; // do not include the termination character
 }
 
-void avStringClone(AvStringRef dst, AvString src) {
+void avStringClone_(AvStringRef dst, AvString src, const char* file, uint32 line) {
 	AvStringHeapMemory memory;
-	avStringMemoryHeapAllocate(src.len, &memory);
+	avStringMemoryHeapAllocate_(src.len, &memory, file, line);
 	avStringMemoryStore(src, 0, AV_STRING_FULL_LENGTH, memory);
 	if(dst->memory){
 		avStringFree(dst);	
@@ -320,6 +320,10 @@ void avStringDebugContextStart_() {
 }
 
 void avStringDebugContextEnd_() {
+	if(debugContext==0x0){
+		avStringPrintln(AV_CSTRA("Debug context inbalance"));
+		return;
+	}
 	uint unfreedMemory = avDynamicArrayGetSize(debugContext->allocatedMemory);
 	for (uint i = 0; i < unfreedMemory; i++) {
 		AvStringMemoryRef stringMemory;
