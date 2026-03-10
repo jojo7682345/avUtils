@@ -194,9 +194,9 @@ static bool32 executeProcess(AvProcessStartInfo info, AvProcess process) {
     AvString cmd = AV_EMPTY;
     avStringFromMemory(&cmd, AV_STRING_WHOLE_MEMORY, &memory);
     
-    char commandLine[1024];
-    avMemcpy(commandLine, cmd.chrs, AV_MIN(1023, cmd.len));
-    commandLine[AV_MIN(1023,cmd.len)] = '\0';
+    char commandLine[4096];
+    avMemcpy(commandLine, cmd.chrs, AV_MIN(4095, cmd.len));
+    commandLine[AV_MIN(4095,cmd.len)] = '\0';
 
     int32 bSuccess = CreateProcessA(
         NULL,
