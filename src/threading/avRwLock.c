@@ -4,6 +4,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#define _POSIX_C_SOURCE 200809L
 #include <pthread.h>
 #endif
 

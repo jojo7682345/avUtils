@@ -23,7 +23,7 @@ typedef struct AvPathNode {
 typedef struct AvPath {
 	AvString path;
 	struct AvPath* root;
-	AvAllocator allocator;
+	AvAllocator* allocator;
 	uint32 contentCount;
 	AvPathNode* content;
 } AvPath;

@@ -8,7 +8,7 @@ import global "std/c/stdc.project" {
 var compiler = "gcc";
 var linker = "ar";
 
-var flags = "-std=c11 -Wall -ggdb -fPIC";
+var flags = "-std=c11 -Wall -ggdb -fPIC -pthread";
 var archiverflags = "rcs";
 
 var includes="include";
@@ -20,9 +20,11 @@ var outDir = "lib";
 func avUtils(){
     var sources = getSource(sourceDir);
     var ret = buildStaticLibrary(sources, buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
-    if(arraySize(ret)){
+    if(ret){
+        println("success");
         return 0;
     }else{
+        println("failed");
         return -1;
     }
 }

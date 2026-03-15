@@ -177,13 +177,14 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
     avStringDebugContextStart;
     AvPath path = {0};
     AvString fullPath = AV_EMPTY;
-    if(root){
+    if(root!=NULL){
         path.root = root;
         path.allocator = root->allocator;
         avStringJoin(&fullPath, root->path, AV_CSTR("/"), location);
     }else{
         path.root = nullptr;
-        avAllocatorCreate(0, AV_ALLOCATOR_TYPE_DYNAMIC, &path.allocator);
+        path.allocator = avAllocate(sizeof(AvAllocator), "");
+        avAllocatorCreate(0, AV_ALLOCATOR_TYPE_DYNAMIC, path.allocator);
         avStringClone(&fullPath, location);
     }
     avStringReplaceChar(&fullPath, '\\', '/');
@@ -193,7 +194,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
         .memory = fullPath.memory,
     };
     avStringUnsafeCopy(&fullPath, fullPathFixed);
-    avStringCopyToAllocator(fullPath, &path.path, &path.allocator);
+    avStringCopyToAllocator(fullPath, &path.path, path.allocator);
     if(pathGetType(fullPath)!=AV_PATH_NODE_TYPE_DIRECTORY){
         goto pathNotDirectory;
     }
@@ -232,7 +233,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
             .type = type,
         };
 
-        avStringCopyToAllocator(entryPath, &node.fullName, &path.allocator);
+        avStringCopyToAllocator(entryPath, &node.fullName, path.allocator);
         AvString fileName = {
             .chrs = node.fullName.chrs + fullPath.len + 1,
             .len = node.fullName.len - fullPath.len - 1,
@@ -286,7 +287,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
             .type = type,
         };
 
-        avStringCopyToAllocator(entryPath, &node.fullName, &path.allocator);
+        avStringCopyToAllocator(entryPath, &node.fullName, path.allocator);
         AvString fileName = {
             .chrs = node.fullName.chrs + fullPath.len + 1,
             .len = node.fullName.len - fullPath.len - 1,
@@ -305,7 +306,7 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
 
     path.contentCount = avDynamicArrayGetSize(entries);
     if(path.contentCount){
-        AvPathNode* content = avAllocatorAllocate(sizeof(AvPathNode)*path.contentCount, &path.allocator);
+        AvPathNode* content = avAllocatorAllocate(sizeof(AvPathNode)*path.contentCount, path.allocator);
         avDynamicArrayReadRange(content, path.contentCount, 0, sizeof(AvPathNode), 0, entries);
         path.content = content;
     }
@@ -320,8 +321,8 @@ bool32 avDirectoryOpen(AvString location, AvPath* root, AvPathRef pathRef){
 pathNotFound:
     avDynamicArrayDestroy(entries);
 pathNotDirectory:
-    if(!root){
-        avAllocatorDestroy(&path.allocator);
+    if(root==NULL){
+        avAllocatorDestroy(path.allocator);
     }
 
     avStringFree(&fullPath);
@@ -332,10 +333,11 @@ pathNotDirectory:
 #pragma GCC diagnostic pop
 
 void avDirectoryClose(AvPathRef path){
-    if(path->root){
+    if(path->root!=NULL){
         return;
     }
-    avAllocatorDestroy(&path->allocator);
+    avAllocatorDestroy(path->allocator);
+    avFree(path->allocator);
 }
 
 #ifndef _WIN32
