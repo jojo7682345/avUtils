@@ -5,6 +5,7 @@
 #include <AvUtils/dataStructures/avArray.h>
 #include <AvUtils/avLogging.h>
 #include <AvUtils/string/avChar.h>
+#include <AvUtils/avMemory.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -388,7 +389,7 @@ static bool32 avDirectoryDeleteRecursiveWin32(const char* path) {
     StringCchCatA(szDir, MAX_PATH, "\\*");
 
     int len = lstrlen(szDir);
-    TCHAR* from = (TCHAR*)malloc((len + 2) * sizeof(TCHAR));
+    TCHAR* from = (TCHAR*)avAllocate((len + 2) * sizeof(TCHAR),"");
     if (!from)
         return 0;
 
@@ -404,7 +405,7 @@ static bool32 avDirectoryDeleteRecursiveWin32(const char* path) {
                     FOF_SILENT;
 
     int result = SHFileOperationA(&fileop);
-    free(from);
+    avFree(from);
 
     if (result != 0 || fileop.fAnyOperationsAborted)
         return 0;

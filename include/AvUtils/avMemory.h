@@ -6,21 +6,32 @@ C_SYMBOLS_START
 #include "avTypes.h"
 
 
+
 void* avAllocate_(uint64 size, const char* message, uint line, const char* func, const char* file);
+void* avCallocate_(uint64 count, uint64 size, const char* message, uint line, const char* func, const char* file);
+void* avReallocate_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file);
+void avFree_(void* data, uint line, const char* func, const char* file);
+
+#ifdef AV_DEBUG_ALLOC
+void* avAllocateDebug_(uint64 size, const char* message, uint line, const char* func, const char* file);
+void* avCallocateDebug_(uint64 count, uint64 size, const char* message, uint line, const char* func, const char* file);
+void* avReallocateDebug_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file);
+void avFreeDebug_(void* data, uint line, const char* func, const char* file);
+
+#define avAllocate_ avAllocateDebug_
+#define avCallocate_ avCallocateDebug_
+#define avReallocate_ avReallocateDebug_
+#define avFree_ avFreeDebug_
+#endif
+
 
 #ifdef AV_ALLOCATE_ZERO_OUT
 #define avAllocate(size, message) avCallocate_(1, size, message, __LINE__, __func__, __FILE__);
 #else
 #define avAllocate(size, message) avAllocate_(size, message, __LINE__, __func__, __FILE__)
 #endif
-
-void* avCallocate_(uint64 count, uint64 size, const char* message, uint line, const char* func, const char* file);
 #define avCallocate(count, size, message) avCallocate_(count, size, message, __LINE__, __func__, __FILE__)
-
-void* avReallocate_(void* data, uint64 size, const char* message, uint line, const char* func, const char* file);
 #define avReallocate(data, size, message) avReallocate_(data, size, message, __LINE__, __func__, __FILE__)
-
-void avFree_(void* data, uint line, const char* func, const char* file);
 #define avFree(data) avFree_(data, __LINE__, __func__, __FILE__)
 
 void avMemcpy(void* restrict dst, const void* restrict src, uint64 size);
