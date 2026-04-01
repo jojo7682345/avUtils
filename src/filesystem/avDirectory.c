@@ -344,8 +344,14 @@ void avDirectoryClose(AvPathRef path){
 #ifndef _WIN32
 static bool32 avDirectoryDeleteRecursivePosix(const char* path) {
     DIR* dir = opendir(path);
-    if (!dir)
-        return rmdir(path) == 0;
+    if (!dir){
+        if(rmdir(path) == 0){
+            return true;
+        }else{
+            printf("%s\n", strerror(errno));
+            return false;
+        }
+    }
 
     struct dirent* entry;
     while ((entry = readdir(dir))) {

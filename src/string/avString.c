@@ -14,9 +14,18 @@
 #define NULL_TERMINATOR_SIZE 1
 
 typedef struct StringDebugContext_T* StringDebugContext;
+#define STRING_DEBUG_INITIAL_CAPACITY 1
 typedef struct StringDebugContext_T {
 	StringDebugContext prev;
-	AvDynamicArray allocatedMemory;
+	//AvDynamicArray allocatedMemory;
+
+
+	uint32 allocationCount;
+	uint32 allocationCapacity;
+	uint32* memoryIndex;
+	uint32* memoryReference;
+	AvStringMemoryRef* memories;
+	
 } StringDebugContext_T;
 static StringDebugContext debugContext;
 
@@ -179,6 +188,110 @@ void avStringMemoryHeapAllocate_(uint64 capacity, AvStringHeapMemory* memory, co
 	avStringMemoryAllocate_(capacity, *memory, file, line);
 }
 
+static void addAllocation(AvStringMemoryRef ref){
+	if (!debugContext) return;
+	if (ref==NULL) {
+		avAssert(false, "Corruption");
+		return;
+	}
+	StringDebugContext context = NULL;
+	if(!ref->properties.heapAllocated){
+		context = debugContext;
+	}else if (debugContext->prev) {
+		context = debugContext->prev;
+	}
+	if(context == NULL) return;
+	ref->properties.debugContext = context;
+
+	if(context->allocationCount >= context->allocationCapacity){
+		uint32 oldCapacity = context->allocationCapacity;
+		context->allocationCapacity *= 2;
+		context->memoryIndex = avReallocate(context->memoryIndex, sizeof(uint32)*context->allocationCapacity, "");
+		context->memoryReference = avReallocate(context->memoryReference, sizeof(uint32)*context->allocationCapacity, "");
+		context->memories = avReallocate(context->memories, sizeof(context->memories[0])*context->allocationCapacity, "");
+		for(uint32 i = oldCapacity; i < context->allocationCapacity; i++){
+			context->memoryIndex[i] = i;
+			context->memoryReference[i] = i;
+			context->memories[i] = NULL;
+		}
+	}
+
+	uint32 index = context->allocationCount++;
+	ref->properties.contextAllocationIndex = context->memoryReference[index];
+	context->memories[index] = ref;
+
+	for(uint32 i = 0; i < context->allocationCount; i++){
+		if(context->memories[i]==NULL){
+			avAssert(false, "Corruption");
+			return;
+		}
+	}
+	for(uint32 i = 0; i < context->allocationCapacity; i++){
+		uint32 id = context->memoryReference[i];
+		uint32 index = context->memoryIndex[id];
+		if(index != i){
+			avAssert(false, "Corruption");
+			return;
+		}
+	}
+}
+
+static void removeAllocation(AvStringMemoryRef ref){
+	if (!ref->properties.debugContext) return;
+	if (ref==NULL) {
+		avAssert(false, "Corruption");
+		return;
+	}
+	StringDebugContext context = ref->properties.debugContext;
+
+	if(context->allocationCount==0) return;
+	
+	uint32 id = ref->properties.contextAllocationIndex;
+	if(id >= context->allocationCapacity) {
+		avAssert(false, "Corruption");
+		return;
+	};
+	uint32 index = context->memoryIndex[id];
+	if(index >= context->allocationCount) {
+		avAssert(false, "Corruption");
+		return;
+	};
+	if(context->memories[index] != ref) {
+		avAssert(false, "Corruption");
+		return;
+	}
+
+	ref->properties.contextAllocationIndex = -1;
+	uint32 lastIndex = context->allocationCount-1;
+	uint32 lastId = context->memoryReference[lastIndex];
+	AvStringMemoryRef lastRef = context->memories[lastIndex];
+	if(index==lastIndex){
+		context->memories[index]=NULL;
+		context->allocationCount--;
+		return;
+	}
+	context->memoryReference[lastIndex] = id;
+	context->memoryReference[index] = lastId;
+	context->memoryIndex[lastId] = index;
+	context->memoryIndex[id] = lastIndex;
+	context->memories[lastIndex] = NULL;
+	context->memories[index] = lastRef;
+	context->allocationCount--;
+		// avDynamicArrayRemove(ref->properties.contextAllocationIndex, ((StringDebugContext)ref->properties.debugContext)->allocatedMemory);
+		// for (
+		// 	uint32 i = ref->properties.contextAllocationIndex; 
+		// 	i < avDynamicArrayGetSize(((StringDebugContext)ref->properties.debugContext)->allocatedMemory); 
+		// 	i++
+		// ) {
+		// 	AvStringMemoryRef tmp;
+		// 	avDynamicArrayRead(&tmp, i, ((StringDebugContext)ref->properties.debugContext)->allocatedMemory);
+		// 	tmp->properties.contextAllocationIndex--;
+		// 	avDynamicArrayWrite(&tmp, i, ((StringDebugContext)ref->properties.debugContext)->allocatedMemory);
+		// }
+	
+}
+
+
 void avStringMemoryAllocate_(uint64 capacity, AvStringMemoryRef memory, const char* file, uint32 line) {
 	avAssert(memory != nullptr, "invalid memory reference");
 	avAssert(memory->data == nullptr, "string memory already allocated");
@@ -192,17 +305,8 @@ void avStringMemoryAllocate_(uint64 capacity, AvStringMemoryRef memory, const ch
 	memory->properties.allocationLine = line;
 	memory->properties.allocationFile = file;
 #ifndef NDEBUG
-	if (debugContext) {
-		if(!memory->properties.heapAllocated){
-			memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->allocatedMemory);
-			memory->properties.debugContext = debugContext;
-		}else if (debugContext->prev) {
-			memory->properties.contextAllocationIndex = avDynamicArrayAdd(&memory, debugContext->prev->allocatedMemory);
-			memory->properties.debugContext = debugContext->prev;
-		}
-	}
+	addAllocation(memory);
 #endif
-
 }
 
 // void avStringMemoryResize(uint64 capacity, AvStringMemoryRef memory) {
@@ -258,24 +362,14 @@ void avStringMemoryFree(AvStringMemoryRef memory) {
 	avAssert(memory->referenceCount == 0, "freeing string memory still in use");
 
 #ifndef NDEBUG
-	if (memory->properties.debugContext) {
-		avDynamicArrayRemove(memory->properties.contextAllocationIndex, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
-		for (
-			uint32 i = memory->properties.contextAllocationIndex; 
-			i < avDynamicArrayGetSize(((StringDebugContext)memory->properties.debugContext)->allocatedMemory); 
-			i++
-		) {
-			AvStringMemoryRef tmp;
-			avDynamicArrayRead(&tmp, i, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
-			tmp->properties.contextAllocationIndex--;
-			avDynamicArrayWrite(&tmp, i, ((StringDebugContext)memory->properties.debugContext)->allocatedMemory);
-		}
-	}
+	removeAllocation(memory);
 #endif
 
 	if (memory->data) {
 		avFree(memory->data);
 		memory->data = nullptr;
+		memory->capacity = 0;
+		memory->properties.debugContext = NULL;
 	}
 
 	if (memory->properties.heapAllocated) {
@@ -313,8 +407,21 @@ void avStringDebugContextStart_() {
 
 	StringDebugContext context = avCallocate(1, sizeof(StringDebugContext_T), "allocating string debug context");
 	context->prev = debugContext;
-	avDynamicArrayCreate(0, sizeof(AvStringMemoryRef), &context->allocatedMemory);
-	avDynamicArraySetAllowRelocation(true, context->allocatedMemory);
+
+	context->allocationCapacity = STRING_DEBUG_INITIAL_CAPACITY;
+	context->allocationCount = 0;
+	context->memories = avAllocate(sizeof(context->memories[0]) * STRING_DEBUG_INITIAL_CAPACITY, "");
+	context->memoryIndex = avAllocate(sizeof(uint32) * STRING_DEBUG_INITIAL_CAPACITY, "");
+	context->memoryReference = avAllocate(sizeof(uint32) * STRING_DEBUG_INITIAL_CAPACITY, "");
+
+	for(uint32 i = 0; i < STRING_DEBUG_INITIAL_CAPACITY; i++){
+		context->memoryIndex[i] = i;
+		context->memoryReference[i] = i;
+		context->memories[i] = NULL;
+	}
+
+	// avDynamicArrayCreate(0, sizeof(AvStringMemoryRef), &context->allocatedMemory);
+	// avDynamicArraySetAllowRelocation(true, context->allocatedMemory);
 	debugContext = context;
 
 }
@@ -324,10 +431,11 @@ void avStringDebugContextEnd_() {
 		avStringPrintln(AV_CSTRA("Debug context inbalance"));
 		return;
 	}
-	uint unfreedMemory = avDynamicArrayGetSize(debugContext->allocatedMemory);
+	//uint unfreedMemory = avDynamicArrayGetSize(debugContext->allocatedMemory);
+	uint32 unfreedMemory = debugContext->allocationCount;
 	for (uint i = 0; i < unfreedMemory; i++) {
-		AvStringMemoryRef stringMemory;
-		avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
+		AvStringMemoryRef stringMemory = debugContext->memories[i];
+		//avDynamicArrayRead(&stringMemory, 0, debugContext->allocatedMemory);
 
 		//TODO: better log
 		avStringPrintf(AV_CSTR("allocated string memory containing \"%S\" has not been freed: %u remaining references, allocated at %s:%i\n"), 
@@ -337,8 +445,10 @@ void avStringDebugContextEnd_() {
 			stringMemory->properties.allocationLine
 		);
 	}
-	avDynamicArrayDestroy(debugContext->allocatedMemory);
-
+	//avDynamicArrayDestroy(debugContext->allocatedMemory);
+	avFree(debugContext->memoryIndex);
+	avFree(debugContext->memoryReference);
+	avFree(debugContext->memories);
 
 	StringDebugContext nextContext = debugContext->prev;
 	avFree(debugContext);
