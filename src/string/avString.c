@@ -37,7 +37,7 @@ uint64 avCStringLength(const char* str) {
 }
 
 void avStringClone_(AvStringRef dst, AvString src, const char* file, uint32 line) {
-	AvStringHeapMemory memory;
+	AvStringHeapMemory memory = NULL;
 	avStringMemoryHeapAllocate_(src.len, &memory, file, line);
 	avStringMemoryStore(src, 0, AV_STRING_FULL_LENGTH, memory);
 	if(dst->memory){
@@ -178,7 +178,7 @@ void avStringFree(AvStringRef str) {
 	avAssert(memory->referenceCount > 0, "string memory references are corrupt");
 
 	stringMemoryRemoveReference(memory);
-	memset(str, 0, sizeof(AvString));
+	avMemset(str, 0, sizeof(AvString));
 }
 
 void avStringMemoryHeapAllocate_(uint64 capacity, AvStringHeapMemory* memory, const char* file, uint32 line) {
