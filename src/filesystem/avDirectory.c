@@ -443,7 +443,7 @@ bool32 avDirectoryDelete(AvString location, AvDirectoryDeleteOptions options) {
 
 #else
     if (options & AV_DIRECTORY_DELETE_RECURSIVE) {
-        ret = avDirectoryDeleteRecursivePosix(location.chrs);
+        ret = avDirectoryDeleteRecursivePosix(tmp.chrs);
         avStringFree(&tmp);
         return ret;
     }
