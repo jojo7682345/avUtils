@@ -194,3 +194,17 @@ void avMemset(void* restrict dst, byte value, uint64 size) {
         *d++ = value;
     }
 }
+
+
+__attribute__((optimize("O3")))
+void avMemswap(void* restrict dst, void* restrict src, uint64 size){
+    byte* a = (byte*)dst;
+    byte* b = (byte*)src;
+    uint64 index = 0;
+    while(index < size){
+        byte buffer = a[index];
+        a[index] = b[index];
+        b[index] = buffer;
+        index++;
+    }
+}

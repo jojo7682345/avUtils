@@ -1,6 +1,6 @@
 #general
 .o
-.exe
+*.exe
 .dll
 .so
 .a

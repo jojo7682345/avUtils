@@ -37,5 +37,7 @@ void avFreeDebug_(void* data, uint line, const char* func, const char* file);
 void avMemcpy(void* restrict dst, const void* restrict src, uint64 size);
 void avMemset(void* restrict dst, byte value, uint64 size);
 
+void avMemswap(void* restrict dst, void* restrict src, uint64 size);
+
 C_SYMBOLS_END
 #endif //__AV_MEMORY__
