@@ -66,11 +66,13 @@ static void unlockMutex(AvMutex mutex) {
 }
 #else
 static bool32 createMutex(AvMutex mutex) {
-	// no unix specific initialisation is required.
+    if(pthread_mutex_init(&mutex->mutex, NULL) != 0){
+        return false;
+    }
 	return true;
 }
 static void destroyMutex(AvMutex mutex) {
-	// do nothing no unix specific initialisation is required.
+    pthread_mutex_destroy(&mutex->mutex);
 }
 
 static void lockMutex(AvMutex mutex) {

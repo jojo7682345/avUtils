@@ -15,11 +15,18 @@ typedef enum AvThreadState {
 	AV_THREAD_STATE_RUNNING = 2,
 }AvThreadState;
 
+typedef uint16 AvThreadID;
+#define AV_MAX_THREADS (4096)
+#define AV_MAIN_THREAD_ID (0)
+#define AV_INVALID_THREAD_ID ((AvThreadID)-1)
+
+
 void avThreadCreate(AvThreadEntry func, AvThread* thread);
 bool8 avThreadStart(void* buffer, uint64 bufferSize, AvThread thread);
 uint avThreadJoin(AvThread thread);
 void avThreadDestroy(AvThread thread);
 
+AvThreadID avThreadGetID();
 void avThreadSleep(uint64 milis);
 
 C_SYMBOLS_END

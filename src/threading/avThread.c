@@ -2,6 +2,7 @@
 #define AV_ALLOCATE_ZERO_OUT
 #include <AvUtils/avMemory.h>
 #include <stdio.h>
+#include <stdatomic.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -32,12 +33,74 @@ typedef struct AvThread_T {
 } AvThread_T;
 
 
+static uint16 freeThreadIds[AV_MAX_THREADS-1];
+static _Atomic uint16 freeThreadTop = AV_MAX_THREADS-1; //MAIN_THREAD WILL always be 0
+static bool8 threadIDsInitialized = false;
+
+#ifdef _MSC_VER
+    __declspec(thread) static AvThreadID currentThreadId;
+#elif defined(__GNUC__)
+    static __thread AvThreadID currentThreadId;
+#else
+    static _Thread_local AvThreadID currentThreadId;
+#endif
+
+static void initThreadIDs(){
+    for(uint32 i = 0; i < AV_MAX_THREADS-1; i++){
+        freeThreadIds[i] = AV_MAX_THREADS - 1 - i; // no -2 as the main thread is already allocated
+    }
+    threadIDsInitialized = true;
+}
+
+static AvThreadID allocateThreadId(){
+    uint16 top = 0;
+    while(1){
+        top = atomic_load(&freeThreadTop);
+        if(top==0){
+            return AV_INVALID_THREAD_ID;
+        }
+        uint16 newTop = top - 1;
+
+        if(atomic_compare_exchange_weak(
+            &freeThreadTop,
+            &top,
+            newTop)){
+            
+                return freeThreadIds[newTop];
+        }
+    }
+}
+
+static void freeThreadId(AvThreadID id){
+    uint16 top = 0;
+    while(1){
+        top = atomic_load(&freeThreadTop);
+        if(top >= AV_MAX_THREADS){
+            return;
+        }
+
+        freeThreadIds[top] = id;
+
+        uint16 newTop = top + 1;
+        if(atomic_compare_exchange_weak(
+            &freeThreadTop,
+            &top,
+            newTop)){
+                
+            return;
+        }
+    }
+}
+
+
 bool8 startThread(AvThread thread);
 uint joinThread(AvThread thread);
 
 void sleepThread(uint64 milis);
 
 void avThreadCreate(AvThreadEntry func, AvThread* thread) {
+
+    if(threadIDsInitialized) initThreadIDs();
 
 	(*thread) = avAllocate(sizeof(AvThread_T), "allocating handle for thread");
 	(*thread)->entry = func;
@@ -89,6 +152,10 @@ void avThreadSleep(uint64 milis) {
 	sleepThread(milis);
 }
 
+AvThreadID avThreadGetID(){
+    return currentThreadId;
+}
+
 #ifdef _WIN32
 
 void handleWinError(LPTSTR lpszFunction) {
@@ -128,8 +195,12 @@ void handleWinError(LPTSTR lpszFunction) {
 
 uint32 WINAPI run(void* lpParam) {
 	AvThread thread = (AvThread)lpParam;
+    currentThreadId = allocateThreadId();
+    if(currentThreadId==AV_INVALID_THREAD_ID) return -1;
 	uint exitCode = thread->entry(thread->buffer, thread->bufferSize);
 	_endthreadex((DWORD)exitCode);
+    freeThreadId(currentThreadId);
+    currentThreadId = AV_INVALID_THREAD_ID;
 	return (DWORD)exitCode;
 }
 
@@ -181,7 +252,11 @@ void sleepThread(uint64 milis) {
 
 void* run(void* arg) {
 	AvThread thread = (AvThread)arg;
+    currentThreadId = allocateThreadId();
+    if(currentThreadId==AV_INVALID_THREAD_ID) return -1;
 	uint ret = thread->entry(thread->buffer, thread->bufferSize);
+    freeThreadId(currentThreadId);
+    currentThreadId = AV_INVALID_THREAD_ID;
 	pthread_exit((void*)(unsigned long)ret);
 }
 

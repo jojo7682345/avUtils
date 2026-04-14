@@ -66,7 +66,7 @@ void avDumpLeaks(void) {
     printf("Memory leaks detected:\n");
 
     while (current) {
-        printf("Leaked %lu bytes at %p (%s)\n",
+        printf("Leaked %llu bytes at %p (%s)\n",
                current->size,
                current->ptr,
                current->message);

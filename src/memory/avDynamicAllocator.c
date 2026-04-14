@@ -81,7 +81,9 @@ void avDynamicAllocatorReset(AvDynamicAllocator* allocator) {
             largestPage = page;
             largestPageSize = pageSize;
         }else{
-            avFree(page);
+            if(page!=largestPage){
+                avFree(page);
+            } 
         }
         page = next;
     }
