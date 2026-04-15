@@ -237,15 +237,20 @@ static void addAllocation(AvStringMemoryRef ref){
 }
 
 static void removeAllocation(AvStringMemoryRef ref){
-	if (!ref->properties.debugContext) return;
+	if (!ref->properties.debugContext){
+		avAssert(false, "Corruption");
+		return;
+	} 
 	if (ref==NULL) {
 		avAssert(false, "Corruption");
 		return;
 	}
 	StringDebugContext context = ref->properties.debugContext;
 
-	if(context->allocationCount==0) return;
-	
+	if(context->allocationCount==0) {
+		avAssert(false, "corruption");
+		return;
+	}
 	uint32 id = ref->properties.contextAllocationIndex;
 	if(id >= context->allocationCapacity) {
 		avAssert(false, "Corruption");
@@ -361,6 +366,9 @@ void avStringMemoryFree(AvStringMemoryRef memory) {
 	avAssert(memory != nullptr, "invalid memory reference");
 	avAssert(memory->referenceCount == 0, "freeing string memory still in use");
 
+	if(memory->data==NULL){
+		return;
+	}
 #ifndef NDEBUG
 	removeAllocation(memory);
 #endif
@@ -1064,17 +1072,14 @@ uint32 avStringSplit(AV_DS(AvArrayRef, AvString) substrings, AvString split, AvS
 	return splitCount+1;
 }
 
-void avStringFlip(AvStringRef str) {
-	avAssert(str != nullptr, "string must be a valid reference");
-	AvString refString = AV_EMPTY;
-	avStringClone(str, *str);
-	avStringClone(&refString, *str);
+void avStringFlip(AvStringRef dst, AvString src) {
+	avAssert(dst != nullptr, "string must be a valid reference");
+	
+	avStringClone(dst, src);
 
-	for (uint64 i = 0; i < str->len; i++) {
-		str->memory->data[i] = refString.chrs[str->len - i - 1];
+	for (uint64 i = 0; i < src.len; i++) {
+		dst->memory->data[i] = src.chrs[src.len - i - 1];
 	}
-
-	avStringFree(&refString);
 }
 
 void avStringCopyToAllocator(AvString src, AvStringRef dst, AvAllocator* allocator){
