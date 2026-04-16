@@ -21,6 +21,7 @@ static bool32 createSemaphore(AvSemaphore semaphore, uint32 initialCount);
 static void destroySemaphore(AvSemaphore semaphore);
 static void waitSemaphore(AvSemaphore semaphore);
 static void postSemaphore(AvSemaphore semaphore);
+static uint32 postSemaphoreCount(AvSemaphore semaphore, uint32 count);
 static bool32 tryWaitSemaphore(AvSemaphore semaphore);
 static bool32 timedWaitSemaphore(AvSemaphore semaphore, uint32 timeoutMs);
 
@@ -48,6 +49,10 @@ bool32 avSemaphoreTimedWait(AvSemaphore semaphore, uint32 timeoutMs) {
 
 void avSemaphorePost(AvSemaphore semaphore) {
     postSemaphore(semaphore);
+}
+
+void avSemaphorePostCount(AvSemaphore semaphore, uint32 count){
+    postSemaphoreCount(semaphore, count);
 }
 
 #ifdef _WIN32
@@ -87,6 +92,12 @@ static bool32 timedWaitSemaphore(AvSemaphore semaphore, uint32 timeoutMs) {
 
 static void postSemaphore(AvSemaphore semaphore) {
     ReleaseSemaphore(semaphore->semaphoreHandle, 1, NULL);
+}
+
+static uint32 postSemaphoreCount(AvSemaphore semaphore, uint32 count){
+    long int previousCount = 0;
+    ReleaseSemaphore(semaphore->semaphoreHandle, count, &previousCount);
+    return (uint32) previousCount;
 }
 
 #else
@@ -147,6 +158,15 @@ static bool32 timedWaitSemaphore(AvSemaphore semaphore, uint32 timeoutMs) {
 
 static void postSemaphore(AvSemaphore semaphore) {
     sem_post(&semaphore->semaphore);
+}
+
+static uint32 postSemaphoreCount(AvSemaphore semaphore, uint32 count){
+    uint32 initial = 0;
+    sem_getvalue(&semaphore->semaphore, &initial);
+    for(uint32 i = 0; i < count; i++){
+        sem_post(&semaphore->semaphore);
+    }
+    return initial;
 }
 
 #endif

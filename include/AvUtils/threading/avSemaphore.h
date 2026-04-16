@@ -19,6 +19,8 @@ void avSemaphoreWait(AvSemaphore semaphore);
 // increment (signal)
 void avSemaphorePost(AvSemaphore semaphore);
 
+void avSemaphorePostCount(AvSemaphore semaphore, uint32 count);
+
 // non-blocking (returns false if it would block)
 bool32 avSemaphoreTryWait(AvSemaphore semaphore);
 

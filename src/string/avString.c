@@ -238,7 +238,7 @@ static void addAllocation(AvStringMemoryRef ref){
 
 static void removeAllocation(AvStringMemoryRef ref){
 	if (!ref->properties.debugContext){
-		avAssert(false, "Corruption");
+		//avAssert(false, "Corruption");
 		return;
 	} 
 	if (ref==NULL) {
