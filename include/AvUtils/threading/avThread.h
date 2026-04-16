@@ -28,6 +28,7 @@ void avThreadDestroy(AvThread thread);
 
 AvThreadID avThreadGetID();
 void avThreadSleep(uint64 milis);
+void avThreadSetName(AvThread thread, const char* name);
 
 C_SYMBOLS_END
 #endif

@@ -1288,3 +1288,7 @@ void avStringPathResolveRelative(AvStringRef dst, AvString baseFile, AvString re
 
 	avStringPathNormalize(dst);
 }
+
+void avStringInitialize(AvStringRef str){
+    avStringUnsafeCopy(str, AV_EMPTY_STRING);
+}

@@ -187,5 +187,7 @@ void avStringMoveToAllocator(AvStringRef str, AvAllocator* allocator);
 void avStringPathNormalize(AvStringRef path);
 void avStringPathResolveRelative(AvStringRef dst, AvString baseFile, AvString relativePath);
 
+void avStringInitialize(AvStringRef str);
+
 C_SYMBOLS_END
 #endif//__AV_STRING__

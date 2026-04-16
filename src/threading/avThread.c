@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <strsafe.h>
 #include <process.h>
+#include <processthreadsapi.h>
 #else
 #ifndef __USE_MISC
 #define __USE_MISC
@@ -17,12 +18,14 @@
 #include <unistd.h>
 #include <pthread.h>
 #endif
+#include <AvUtils/avString.h>
 
 typedef struct AvThread_T {
 	AvThreadEntry entry;
 	AvThreadState state;
 	byte* buffer;
 	uint64 bufferSize;
+    AvString name;
 
 #ifdef _WIN32
 	DWORD threadID;
@@ -97,6 +100,7 @@ bool8 startThread(AvThread thread);
 uint joinThread(AvThread thread);
 
 void sleepThread(uint64 milis);
+void renameThread(AvThread thread, const char* name);
 
 void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
@@ -104,6 +108,7 @@ void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
 	(*thread) = avAllocate(sizeof(AvThread_T), "allocating handle for thread");
 	(*thread)->entry = func;
+    avStringInitialize(&(*thread)->name);
 	(*thread)->state = AV_THREAD_STATE_STOPPED;
 
 }
@@ -121,7 +126,9 @@ bool8 avThreadStart(void* buffer, uint64 bufferSize, AvThread thread) {
 	if (!startThread(thread)) {
 		return false;
 	}
-
+    if(!avStringIsEmpty(thread->name)){
+        renameThread(thread, thread->name.chrs);
+    }
 	thread->state = AV_THREAD_STATE_RUNNING;
 	return true;
 
@@ -143,7 +150,7 @@ void avThreadDestroy(AvThread thread) {
 	if (thread->state == AV_THREAD_STATE_RUNNING) {
 		avThreadJoin(thread);
 	}
-
+    avStringFree(&thread->name);
 	thread->state = AV_THREAD_STATE_UNINITALIZED;
 	avFree(thread);
 }
@@ -154,6 +161,16 @@ void avThreadSleep(uint64 milis) {
 
 AvThreadID avThreadGetID(){
     return currentThreadId;
+}
+
+void avThreadSetName(AvThread thread, const char* name){
+    AvString tmp;
+    avStringCopySection(&tmp, 0, 15, AV_CSTR(name));
+    avStringClone(&thread->name, tmp);
+    avStringFree(&tmp);
+    if(thread->state!=AV_THREAD_STATE_RUNNING){
+        renameThread(thread, thread->name.chrs);
+    }
 }
 
 #ifdef _WIN32
@@ -247,6 +264,15 @@ void sleepThread(uint64 milis) {
 	Sleep((DWORD)milis);
 }
 
+void renameThread(AvThread thread, const char* name){
+    if (!thread || !thread->threadHandle) return;
+
+    wchar_t wname[64];
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, 64);
+
+    SetThreadDescription(thread->threadHandle, wname);
+}
+
 
 #else
 
@@ -279,6 +305,12 @@ uint joinThread(AvThread thread) {
 
 void sleepThread(uint64 milis) {
 	usleep(milis * 1000U);
+}
+
+void renameThread(AvThread thread, const char* name){
+    if (!thread || thread.) return;
+
+    pthread_setname_np(thread->threadHandle, name);
 }
 
 #endif
