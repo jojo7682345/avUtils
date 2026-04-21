@@ -101,10 +101,11 @@ uint joinThread(AvThread thread);
 
 void sleepThread(uint64 milis);
 void renameThread(AvThread thread, const char* name);
+void yieldThread();
 
 void avThreadCreate(AvThreadEntry func, AvThread* thread) {
 
-    if(threadIDsInitialized) initThreadIDs();
+    if(!threadIDsInitialized) initThreadIDs();
 
 	(*thread) = avAllocate(sizeof(AvThread_T), "allocating handle for thread");
 	(*thread)->entry = func;
@@ -171,6 +172,10 @@ void avThreadSetName(AvThread thread, const char* name){
     if(thread->state!=AV_THREAD_STATE_RUNNING){
         renameThread(thread, thread->name.chrs);
     }
+}
+
+void avThreadYield(){
+    yieldThread();
 }
 
 #ifdef _WIN32
@@ -273,6 +278,10 @@ void renameThread(AvThread thread, const char* name){
     SetThreadDescription(thread->threadHandle, wname);
 }
 
+void yieldThread(){
+    if(!SwitchToThread()) Sleep(0);
+}
+
 
 #else
 
@@ -311,6 +320,10 @@ void renameThread(AvThread thread, const char* name){
     if (!thread || thread.) return;
 
     pthread_setname_np(thread->threadHandle, name);
+}
+
+void yieldThread(){
+    sched_yield();
 }
 
 #endif
