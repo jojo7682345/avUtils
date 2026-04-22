@@ -124,6 +124,7 @@ static bool32 tryWaitSemaphore(AvSemaphore semaphore) {
 }
 
 static bool32 timedWaitSemaphore(AvSemaphore semaphore, uint32 timeoutMs) {
+    #if 0
     struct timespec ts;
 
     // get current time
@@ -154,6 +155,8 @@ static bool32 timedWaitSemaphore(AvSemaphore semaphore, uint32 timeoutMs) {
         }
         // else retry if interrupted
     }
+    #endif
+    return false;
 }
 
 static void postSemaphore(AvSemaphore semaphore) {
@@ -161,7 +164,7 @@ static void postSemaphore(AvSemaphore semaphore) {
 }
 
 static uint32 postSemaphoreCount(AvSemaphore semaphore, uint32 count){
-    uint32 initial = 0;
+    int32 initial = 0;
     sem_getvalue(&semaphore->semaphore, &initial);
     for(uint32 i = 0; i < count; i++){
         sem_post(&semaphore->semaphore);
