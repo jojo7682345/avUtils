@@ -288,7 +288,7 @@ void yieldThread(){
 void* run(void* arg) {
 	AvThread thread = (AvThread)arg;
     currentThreadId = allocateThreadId();
-    if(currentThreadId==AV_INVALID_THREAD_ID) return -1;
+    if(currentThreadId==AV_INVALID_THREAD_ID) return NULL;
 	uint ret = thread->entry(thread->buffer, thread->bufferSize);
     freeThreadId(currentThreadId);
     currentThreadId = AV_INVALID_THREAD_ID;
@@ -317,9 +317,10 @@ void sleepThread(uint64 milis) {
 }
 
 void renameThread(AvThread thread, const char* name){
-    if (!thread || thread.) return;
-
+    if (!thread || !thread->threadHandle) return;
+#ifdef _GNU_SOURCE
     pthread_setname_np(thread->threadHandle, name);
+#endif
 }
 
 void yieldThread(){

@@ -186,6 +186,7 @@ static void waitCondition(AvConditionVariable condition, AvMutex mutex) {
 }
 
 static bool32 timedWaitCondition(AvConditionVariable condition, AvMutex mutex, uint32 timeoutMs) {
+ #if 0   
     struct timespec ts;
 
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -201,6 +202,8 @@ static bool32 timedWaitCondition(AvConditionVariable condition, AvMutex mutex, u
     int result = pthread_cond_timedwait(&condition->condition, &mutex->mutex, &ts);
 
     return result == 0;
+#endif
+    return 0;    
 }
 
 static void signalCondition(AvConditionVariable condition) {
