@@ -214,3 +214,19 @@ void avMemswap(void* restrict dst, void* restrict src, uint64 size){
         index++;
     }
 }
+
+__attribute__((optimize("O3")))
+void* avMemmove(void* dest, const void* src, uint64 size){
+    byte* d = dest;
+    const byte* s = src;
+    if(d < s){
+        while(size--) *d++ = *s++;
+    }else{
+        const byte* lasts = s + (size-1);
+        byte* lastd = d + (size-1);
+        while(size--){
+            *lastd-- = *lasts--;
+        }
+    }
+    return dest;
+}
