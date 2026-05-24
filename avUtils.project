@@ -17,7 +17,7 @@ var sourceDir = "src";
 var buildDir = "build";
 var outDir = "lib";
 
-func avUtils(){
+func main(){
     var sources = getSource(sourceDir);
     var ret = buildStaticLibrary(sources, buildDir, flags, archiverflags, includes, [], PROJECT_NAME, outDir);
     if(ret){
